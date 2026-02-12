@@ -6,6 +6,9 @@ import json
 import time
 from datetime import datetime, timedelta, date
 
+# 別ファイルからログイン関数をインポート
+from auth import login_signup
+
 # --- 初期設定 ---
 st.set_page_config(page_title="AI PFC Manager", layout="wide")
 
@@ -36,48 +39,27 @@ if "gemini" in st.secrets:
 if "current_date" not in st.session_state:
     st.session_state.current_date = date.today()
 
-# --- 関数群 ---
+# --- 関数群 (ログイン以外) ---
 
-def login_signup():
-    """ログイン・サインアップ画面"""
-    st.title("🔐 AI PFC Manager ログイン")
-    
-    tab1, tab2 = st.tabs(["ログイン", "新規登録"])
-    
-    with tab1:
-        email = st.text_input("メールアドレス", key="login_email")
-        password = st.text_input("パスワード", type="password", key="login_pass")
-        if st.button("ログイン"):
-            try:
-                response = supabase.auth.sign_in_with_password({"email": email, "password": password})
-                st.session_state["user"] = response.user
-                st.session_state["session"] = response.session
-                st.success("ログイン成功！")
-                time.sleep(0.5)
-                st.rerun()
-            except Exception as e:
-                st.error(f"ログイン失敗: メールアドレスかパスワードが間違っています。")
-
-    with tab2:
-        # ご要望に合わせて文言を変更
-        st.caption("登録後、[ログイン] タブからログインしてください")
+def get_available_gemini_models():
+    """Gemini APIから利用可能なモデル一覧を取得"""
+    try:
+        models = []
+        for m in genai.list_models():
+            # コンテンツ生成(generateContent)に対応しているモデルのみ抽出
+            if 'generateContent' in m.supported_generation_methods:
+                # 名前をきれいにする (例: models/gemini-pro -> gemini-pro)
+                models.append(m.name.replace("models/", ""))
         
-        new_email = st.text_input("メールアドレス", key="signup_email")
-        new_password = st.text_input("パスワード", type="password", key="signup_pass")
-        
-        if st.button("アカウント作成"):
-            try:
-                # サインアップ処理
-                response = supabase.auth.sign_up({
-                    "email": new_email, 
-                    "password": new_password
-                })
-                
-                # 成功したらメッセージを表示
-                st.success("登録完了！ [ログイン] タブに切り替えてログインしてください。")
-                    
-            except Exception as e:
-                st.error(f"登録エラー: {e}")
+        # 取得できた場合はリストを返す
+        if models:
+            return models
+    except Exception as e:
+        # 取得失敗時はログを出してフォールバック
+        print(f"モデル一覧取得エラー: {e}")
+    
+    # 取得失敗時や空の場合はデフォルトリストを返す
+    return ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"]
 
 def get_user_profile(user_id):
     """ユーザー設定を取得"""
@@ -103,12 +85,12 @@ def save_meal_log(user_id, meal_date, meal_type, text, p, f, c, cal):
         "p_val": p, "f_val": f, "c_val": c, "calories": cal
     }).execute()
 
-def analyze_meal_with_gemini(text):
+def analyze_meal_with_gemini(text, model_name="gemini-2.5-flash"):
     """GeminiでPFCとカロリーを解析"""
     if len(text) < 2: return 0, 0, 0, 0
     try:
-        model = genai.GenerativeModel('gemini-2.0-flash')
-        # プロンプト：カロリーも含めるように指示
+        model = genai.GenerativeModel(model_name)
+        
         prompt = f"""
         あなたは栄養管理AIです。以下の食事内容から、カロリー、タンパク質(P)、脂質(F)、炭水化物(C)を推測してください。
         
@@ -130,7 +112,7 @@ def analyze_meal_with_gemini(text):
 def main_app():
     user = st.session_state["user"]
     
-    # --- サイドバー：プロフィール設定 ---
+    # --- サイドバー：設定 ---
     with st.sidebar:
         st.write(f"User: {user.email}")
         if st.button("ログアウト"):
@@ -141,6 +123,29 @@ def main_app():
                 del st.session_state["session"]
             st.rerun()
             
+        st.divider()
+
+        st.header("🤖 AIモデル設定")
+        
+        # 動的にモデル一覧を取得
+        model_options = get_available_gemini_models()
+        
+        # デフォルト選択のロジック: 2.5-flashがあればそれ、なければリストの最初
+        default_index = 0
+        preferred_models = ["gemini-2.5-flash", "gemini-1.5-flash"]
+        
+        for pref in preferred_models:
+            if pref in model_options:
+                default_index = model_options.index(pref)
+                break
+
+        selected_model = st.selectbox(
+            "使用モデル", 
+            model_options, 
+            index=default_index,
+            help="現在利用可能なAIモデル一覧から選択します。"
+        )
+
         st.divider()
         st.header("⚙️ 設定・目標")
         
@@ -175,18 +180,15 @@ def main_app():
     # --- メイン画面：日付ナビゲーション ---
     st.title("🍽️ AI PFC Manager")
     
-    # 宣言の表示
     if profile.get("declaration"):
         st.info(f"🔥 **Goal:** {profile.get('declaration')}")
 
-    # 日付切り替えボタン
     col_prev, col_date, col_next = st.columns([1, 4, 1])
     with col_prev:
         if st.button("＜ 前日"):
             st.session_state.current_date -= timedelta(days=1)
             st.rerun()
     with col_date:
-        # 日付を大きく表示
         display_date = st.session_state.current_date.strftime("%Y年 %m月 %d日 (%a)")
         st.markdown(f"<h3 style='text-align: center;'>📅 {display_date}</h3>", unsafe_allow_html=True)
     with col_next:
@@ -196,10 +198,7 @@ def main_app():
 
     st.divider()
 
-    # --- 2カラムレイアウト ---
     col_input, col_stats = st.columns([1, 1])
-    
-    # 現在選択されている日付を取得
     current_date_str = st.session_state.current_date.isoformat()
 
     # --- 左カラム：食事入力 ---
@@ -213,13 +212,12 @@ def main_app():
             submitted = st.form_submit_button("AI解析して記録")
             
             if submitted:
-                p, f, c, cal = analyze_meal_with_gemini(food_text)
+                p, f, c, cal = analyze_meal_with_gemini(food_text, selected_model)
                 save_meal_log(user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal)
                 st.success(f"記録しました！ {cal}kcal (P{p} F{f} C{c})")
                 time.sleep(1)
                 st.rerun()
         
-        # 今日の食事履歴リスト
         st.subheader("履歴")
         try:
             logs = supabase.table("meal_logs").select("*").eq("user_id", user.id).eq("meal_date", current_date_str).execute()
@@ -229,7 +227,6 @@ def main_app():
                     with st.expander(f"{log['meal_type']}: {log['food_name'][:15]}..."):
                         st.write(f"**{log['food_name']}**")
                         st.write(f"🔥 {log['calories']}kcal | P:{log['p_val']} F:{log['f_val']} C:{log['c_val']}")
-                        # 削除ボタンの実装（IDを指定して削除）
                         if st.button("削除", key=f"del_{log['id']}"):
                             supabase.table("meal_logs").delete().eq("id", log['id']).execute()
                             st.rerun()
@@ -242,7 +239,6 @@ def main_app():
     with col_stats:
         st.subheader("📊 本日の進捗")
         
-        # 集計
         total_p = total_f = total_c = total_cal = 0
         if logs.data:
             df = pd.DataFrame(logs.data)
@@ -251,17 +247,14 @@ def main_app():
             total_c = df["c_val"].sum()
             total_cal = df["calories"].sum()
         
-        # 目標値の取得
         target_cal = profile.get("target_calories", 2000)
         target_p = profile.get("target_p", 100)
         target_f = profile.get("target_f", 60)
         target_c = profile.get("target_c", 250)
 
-        # カロリーメーター
         st.write(f"**Total Calories: {total_cal} / {target_cal} kcal**")
         st.progress(min(total_cal / target_cal, 1.0))
 
-        # PFCメーター関数
         def pfc_meter(label, current, target, color):
             st.write(f"**{label}: {current} / {target} g**")
             st.progress(min(current / target, 1.0))
@@ -270,7 +263,6 @@ def main_app():
         pfc_meter("Fat (脂質)", total_f, target_f, "yellow")
         pfc_meter("Carb (炭水化物)", total_c, target_c, "green")
         
-        # アドバイス表示 (簡易版)
         st.divider()
         st.info("💡 AIアドバイス")
         rem_cal = target_cal - total_cal
@@ -281,6 +273,7 @@ def main_app():
 
 # --- アプリ起動 ---
 if "user" not in st.session_state:
-    login_signup()
+    # 外部ファイルの関数を呼び出す（supabaseクライアントを渡す）
+    login_signup(supabase)
 else:
     main_app()
