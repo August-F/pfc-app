@@ -12,12 +12,18 @@ st.set_page_config(page_title="AI PFC Manager", layout="wide")
 # Supabase接続
 @st.cache_resource
 def init_supabase():
-    url = st.secrets["supabase"]["url"]
-    key = st.secrets["supabase"]["key"]
-    return create_client(url, key)
+    # st.secretsがない場合のハンドリング（ローカル開発用など）
+    if "supabase" in st.secrets:
+        url = st.secrets["supabase"]["url"]
+        key = st.secrets["supabase"]["key"]
+        return create_client(url, key)
+    return None
 
 try:
     supabase: Client = init_supabase()
+    if supabase is None:
+        st.error("Supabaseの接続情報が設定されていません。secrets.tomlを確認してください。")
+        st.stop()
 except Exception as e:
     st.error(f"Supabase接続エラー: {e}")
     st.stop()
@@ -46,20 +52,30 @@ def login_signup():
                 response = supabase.auth.sign_in_with_password({"email": email, "password": password})
                 st.session_state["user"] = response.user
                 st.session_state["session"] = response.session
-                st.success("ログイン成功")
+                st.success("ログイン成功！")
                 time.sleep(0.5)
                 st.rerun()
             except Exception as e:
-                st.error(f"ログイン失敗: {e}")
+                st.error(f"ログイン失敗: メールアドレスかパスワードが間違っています。")
 
     with tab2:
-        st.caption("登録後、自動ログインします（メール確認OFFの場合）")
+        # ご要望に合わせて文言を変更
+        st.caption("登録後、[ログイン] タブからログインしてください")
+        
         new_email = st.text_input("メールアドレス", key="signup_email")
         new_password = st.text_input("パスワード", type="password", key="signup_pass")
+        
         if st.button("アカウント作成"):
             try:
-                response = supabase.auth.sign_up({"email": new_email, "password": new_password})
-                st.success("登録完了！ログインしてください。")
+                # サインアップ処理
+                response = supabase.auth.sign_up({
+                    "email": new_email, 
+                    "password": new_password
+                })
+                
+                # 成功したらメッセージを表示
+                st.success("登録完了！ [ログイン] タブに切り替えてログインしてください。")
+                    
             except Exception as e:
                 st.error(f"登録エラー: {e}")
 
@@ -119,7 +135,10 @@ def main_app():
         st.write(f"User: {user.email}")
         if st.button("ログアウト"):
             supabase.auth.sign_out()
-            del st.session_state["user"]
+            if "user" in st.session_state:
+                del st.session_state["user"]
+            if "session" in st.session_state:
+                del st.session_state["session"]
             st.rerun()
             
         st.divider()
@@ -150,6 +169,7 @@ def main_app():
                 }
                 update_user_profile(user.id, updates)
                 st.success("保存しました")
+                time.sleep(0.5)
                 st.rerun()
 
     # --- メイン画面：日付ナビゲーション ---
@@ -201,17 +221,22 @@ def main_app():
         
         # 今日の食事履歴リスト
         st.subheader("履歴")
-        logs = supabase.table("meal_logs").select("*").eq("user_id", user.id).eq("meal_date", current_date_str).execute()
-        
-        if logs.data:
-            for log in logs.data:
-                with st.expander(f"{log['meal_type']}: {log['food_name'][:15]}..."):
-                    st.write(f"**{log['food_name']}**")
-                    st.write(f"🔥 {log['calories']}kcal | P:{log['p_val']} F:{log['f_val']} C:{log['c_val']}")
-                    # 削除ボタンの実装（IDを指定して削除）
-                    if st.button("削除", key=f"del_{log['id']}"):
-                        supabase.table("meal_logs").delete().eq("id", log['id']).execute()
-                        st.rerun()
+        try:
+            logs = supabase.table("meal_logs").select("*").eq("user_id", user.id).eq("meal_date", current_date_str).execute()
+            
+            if logs.data:
+                for log in logs.data:
+                    with st.expander(f"{log['meal_type']}: {log['food_name'][:15]}..."):
+                        st.write(f"**{log['food_name']}**")
+                        st.write(f"🔥 {log['calories']}kcal | P:{log['p_val']} F:{log['f_val']} C:{log['c_val']}")
+                        # 削除ボタンの実装（IDを指定して削除）
+                        if st.button("削除", key=f"del_{log['id']}"):
+                            supabase.table("meal_logs").delete().eq("id", log['id']).execute()
+                            st.rerun()
+            else:
+                st.info("まだ記録がありません")
+        except Exception as e:
+            st.error(f"データ取得エラー: {e}")
 
     # --- 右カラム：グラフと集計 ---
     with col_stats:
