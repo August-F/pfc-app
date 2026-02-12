@@ -288,6 +288,7 @@ def main_app():
             ax.vlines(target, -0.4, 0.4, colors='black', linestyles='dashed', linewidth=2, zorder=4)
             
             # タイトル（ラベルと数値）
+            # 日本語文字化け対策のため、ラベルは英語で渡される前提
             ax.set_title(f"{label}: {current} / {target} {unit}", loc='left', fontsize=10, fontweight='bold', color='#333333')
             
             # 軸の装飾を消す
@@ -302,21 +303,22 @@ def main_app():
             # X軸のグリッド線（薄く表示）
             ax.grid(axis='x', linestyle=':', alpha=0.5)
             
-            plt.tight_layout()
+            # グラフの幅（余白）を固定して揃える
+            # left, right, top, bottom は 0.0 ~ 1.0 の割合
+            # ここを固定することで、ラベルの長さに依存せずバーの開始位置が揃う
+            plt.subplots_adjust(left=0.02, right=0.98, top=0.8, bottom=0.2)
+            
             return fig
 
         # グラフの表示
-        # カロリー: 緑
-        st.pyplot(create_progress_chart("Total Calories", total_cal, target_cal, "kcal", "#4CAF50"))
+        # 文字化け対策のため、ラベルを英語表記に変更
+        st.pyplot(create_progress_chart("Calories", total_cal, target_cal, "kcal", "#4CAF50"))
         
-        # P: 青
-        st.pyplot(create_progress_chart("Protein (タンパク質)", total_p, target_p, "g", "#2196F3"))
+        st.pyplot(create_progress_chart("Protein", total_p, target_p, "g", "#2196F3"))
         
-        # F: 黄色 (脂質は注意が必要なので黄色系)
-        st.pyplot(create_progress_chart("Fat (脂質)", total_f, target_f, "g", "#FFC107"))
+        st.pyplot(create_progress_chart("Fat", total_f, target_f, "g", "#FFC107"))
         
-        # C: ターコイズ/緑
-        st.pyplot(create_progress_chart("Carb (炭水化物)", total_c, target_c, "g", "#009688"))
+        st.pyplot(create_progress_chart("Carb", total_c, target_c, "g", "#009688"))
         
         st.divider()
         st.info("💡 AIアドバイス")
