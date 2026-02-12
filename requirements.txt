@@ -1,1 +1,4 @@
-streamlitsupabasepandasgoogle-generativeai
+streamlit
+supabase
+pandas
+google-generativeai
