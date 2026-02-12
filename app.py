@@ -5,7 +5,7 @@ import google.generativeai as genai
 import json
 import time
 from datetime import datetime, timedelta, date
-import matplotlib.pyplot as plt # グラフ描画用にインポート追加
+import matplotlib.pyplot as plt
 
 # 別ファイルからログイン関数をインポート
 from auth import login_signup
@@ -16,7 +16,7 @@ st.set_page_config(page_title="AI PFC Manager", layout="wide")
 # Supabase接続
 @st.cache_resource
 def init_supabase():
-    # st.secretsがない場合のハンドリング（ローカル開発用など）
+    # st.secretsがない場合のハンドリング
     if "supabase" in st.secrets:
         url = st.secrets["supabase"]["url"]
         key = st.secrets["supabase"]["key"]
@@ -47,19 +47,12 @@ def get_available_gemini_models():
     try:
         models = []
         for m in genai.list_models():
-            # コンテンツ生成(generateContent)に対応しているモデルのみ抽出
             if 'generateContent' in m.supported_generation_methods:
-                # 名前をきれいにする (例: models/gemini-pro -> gemini-pro)
                 models.append(m.name.replace("models/", ""))
-        
-        # 取得できた場合はリストを返す
         if models:
             return models
     except Exception as e:
-        # 取得失敗時はログを出してフォールバック
         print(f"モデル一覧取得エラー: {e}")
-    
-    # 取得失敗時や空の場合はデフォルトリストを返す
     return ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"]
 
 def get_user_profile(user_id):
@@ -91,7 +84,6 @@ def analyze_meal_with_gemini(text, model_name="gemini-2.5-flash"):
     if len(text) < 2: return None
     try:
         model = genai.GenerativeModel(model_name)
-        
         prompt = f"""
         あなたは栄養管理AIです。以下の食事内容から、カロリー、タンパク質(P)、脂質(F)、炭水化物(C)を推測してください。
         
@@ -108,16 +100,16 @@ def analyze_meal_with_gemini(text, model_name="gemini-2.5-flash"):
     except Exception as e:
         error_msg = str(e)
         if "429" in error_msg:
-            st.error("⚠️ AIモデルの利用制限（アクセス集中、レート制限など）により解析できませんでした。時間をおくか、サイドバーから別のモデルに変更して試してください。")
+            st.error("⚠️ AIモデルの利用制限（アクセス集中など）により解析できませんでした。時間を置くか、別のモデルを試してください。")
         else:
-            st.error(f"⚠️ AI解析エラーが発生しました: {error_msg}")
+            st.error(f"⚠️ AI解析エラー: {error_msg}")
         return None
 
 # --- メインアプリ ---
 def main_app():
     user = st.session_state["user"]
     
-    # --- サイドバー：設定 ---
+    # --- サイドバー ---
     with st.sidebar:
         st.write(f"User: {user.email}")
         if st.button("ログアウト"):
@@ -131,46 +123,30 @@ def main_app():
         st.divider()
 
         st.header("🤖 AIモデル設定")
-        
-        # 動的にモデル一覧を取得
         model_options = get_available_gemini_models()
-        
-        # デフォルト選択のロジック: 2.5-flashがあればそれ、なければリストの最初
         default_index = 0
         preferred_models = ["gemini-2.5-flash", "gemini-1.5-flash"]
-        
         for pref in preferred_models:
             if pref in model_options:
                 default_index = model_options.index(pref)
                 break
-
-        selected_model = st.selectbox(
-            "使用モデル", 
-            model_options, 
-            index=default_index,
-            help="現在利用可能なAIモデル一覧から選択します。"
-        )
+        selected_model = st.selectbox("使用モデル", model_options, index=default_index)
 
         st.divider()
-        # st.header("⚙️ 設定・目標") # ヘッダーを削除し、expanderのラベルにします
-        
         profile = get_user_profile(user.id)
         
-        # expanderで折りたたみ可能にする
         with st.expander("⚙️ 設定・目標", expanded=False):
             with st.form("profile_form"):
-                decl = st.text_input("🔥 宣言 (My Goal)", value=profile.get("declaration") or "")
-                
+                decl = st.text_input("🔥 宣言", value=profile.get("declaration") or "")
                 st.subheader("目標数値")
                 t_cal = st.number_input("目標カロリー (kcal)", value=profile.get("target_calories", 2000))
                 t_p = st.number_input("目標 P (g)", value=profile.get("target_p", 100))
                 t_f = st.number_input("目標 F (g)", value=profile.get("target_f", 60))
                 t_c = st.number_input("目標 C (g)", value=profile.get("target_c", 250))
-                
                 st.subheader("好み・要望")
                 likes = st.text_area("好きな食べ物", value=profile.get("likes") or "")
                 dislikes = st.text_area("苦手な食べ物", value=profile.get("dislikes") or "")
-                prefs = st.text_area("その他要望 (調理など)", value=profile.get("preferences") or "")
+                prefs = st.text_area("その他要望", value=profile.get("preferences") or "")
                 
                 if st.form_submit_button("設定を保存"):
                     updates = {
@@ -184,7 +160,7 @@ def main_app():
                     time.sleep(0.5)
                     st.rerun()
 
-    # --- メイン画面：日付ナビゲーション ---
+    # --- メイン画面 ---
     st.title("🍽️ AI PFC Manager")
     
     if profile.get("declaration"):
@@ -208,33 +184,26 @@ def main_app():
     col_input, col_stats = st.columns([1, 1])
     current_date_str = st.session_state.current_date.isoformat()
 
-    # --- 左カラム：食事入力 ---
+    # --- 左カラム：入力 ---
     with col_input:
         st.subheader("📝 食事を記録")
-        st.caption(f"{current_date_str} の記録を追加します")
-        
         with st.form("meal_input"):
             meal_type = st.selectbox("タイミング", ["朝食", "昼食", "夕食", "間食"])
-            food_text = st.text_area("食べたもの (例: 牛丼並盛、サラダ)", height=100)
+            food_text = st.text_area("食べたもの", height=100)
             submitted = st.form_submit_button("AI解析して記録")
             
             if submitted:
-                # 解析結果を受け取る
                 result = analyze_meal_with_gemini(food_text, selected_model)
-                
-                # 結果がNoneでない（成功した）場合のみ保存する
                 if result:
                     p, f, c, cal = result
                     save_meal_log(user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal)
-                    st.success(f"記録しました！ {cal}kcal (P{p} F{f} C{c})")
+                    st.success(f"記録しました！ {cal}kcal")
                     time.sleep(1)
                     st.rerun()
-                # エラーの場合は analyze_meal_with_gemini 内で st.error が表示され、保存処理はスキップされる
         
         st.subheader("履歴")
         try:
             logs = supabase.table("meal_logs").select("*").eq("user_id", user.id).eq("meal_date", current_date_str).execute()
-            
             if logs.data:
                 for log in logs.data:
                     with st.expander(f"{log['meal_type']}: {log['food_name'][:15]}..."):
@@ -248,10 +217,11 @@ def main_app():
         except Exception as e:
             st.error(f"データ取得エラー: {e}")
 
-    # --- 右カラム：グラフと集計 ---
+    # --- 右カラム：グラフ ---
     with col_stats:
         st.subheader("📊 本日の進捗")
         
+        # 集計
         total_p = total_f = total_c = total_cal = 0
         if logs.data:
             df = pd.DataFrame(logs.data)
@@ -266,60 +236,89 @@ def main_app():
         target_c = profile.get("target_c", 250)
 
         # ---------------------------------------------------------
-        # カスタムグラフ描画関数 (Matplotlib使用)
+        # あすけん風 達成率比較グラフ
         # ---------------------------------------------------------
-        def create_progress_chart(label, current, target, unit, base_color):
-            """目標線(点線)と超過表示付きのグラフを作成"""
-            fig, ax = plt.subplots(figsize=(6, 1.2))
+        def create_summary_chart(data_dict):
+            """
+            data_dict = {
+                'Label': {'current': 100, 'target': 200, 'unit': 'g'},
+                ...
+            }
+            """
+            labels = list(data_dict.keys())
+            # 上からカロリー、P、F、Cの順に並べたいので逆順にする（barhは下から描画するため）
+            labels.reverse()
             
-            # 背景透明化
+            # データの準備
+            ratios = []
+            texts = []
+            colors = []
+            
+            for label in labels:
+                d = data_dict[label]
+                # ゼロ除算回避
+                tgt = d['target'] if d['target'] > 0 else 1
+                ratio = (d['current'] / tgt) * 100
+                ratios.append(ratio)
+                
+                # 数値テキスト (例: 1500 / 2000 kcal)
+                texts.append(f"{int(d['current'])} / {int(d['target'])} {d['unit']}")
+                
+                # 色分け (100%超えで赤、それ以外は緑)
+                if ratio > 100:
+                    colors.append("#FF4B4B") # 赤
+                else:
+                    colors.append("#4CAF50") # 緑 (あすけん風)
+
+            # 描画
+            fig, ax = plt.subplots(figsize=(6, 3.5))
             fig.patch.set_alpha(0)
             ax.patch.set_alpha(0)
-
-            # 超過判定：目標を超えたら赤色(#FF4B4B)にする
-            is_exceeded = current > target
-            bar_color = base_color if not is_exceeded else "#FF4B4B"
             
             # バーの描画
-            ax.barh(0, current, color=bar_color, height=0.6, align='center', zorder=3)
+            bars = ax.barh(labels, ratios, color=colors, height=0.6, zorder=3)
             
-            # 目標ライン（黒い点線）を描画
-            # vlines(x, ymin, ymax)
-            ax.vlines(target, -0.4, 0.4, colors='black', linestyles='dashed', linewidth=2, zorder=4)
+            # 目標ライン（100%の位置）
+            ax.axvline(100, color='black', linestyle='--', linewidth=1.5, zorder=4)
             
-            # タイトル（ラベルと数値）
-            # 日本語文字化け対策のため、ラベルは英語で渡される前提
-            ax.set_title(f"{label}: {current} / {target} {unit}", loc='left', fontsize=10, fontweight='bold', color='#333333')
+            # ラベルと数値の表示
+            ax.set_yticks(range(len(labels)))
+            ax.set_yticklabels(labels, fontsize=11, fontweight='bold', color='#333333')
             
-            # 軸の装飾を消す
-            ax.set_yticks([]) # Y軸ラベルなし
-            for spine in ax.spines.values():
-                spine.set_visible(False) # 枠線なし
+            # バーの右側に数値を表示
+            max_ratio = max(max(ratios) if ratios else 0, 120)
+            ax.set_xlim(0, max_ratio * 1.35) # テキストが入るように右側を空ける
             
-            # X軸の範囲設定（目標値か現在値の大きい方 + 余白）
-            max_val = max(current, target) * 1.15
-            ax.set_xlim(0, max_val if max_val > 0 else 1)
-            
-            # X軸のグリッド線（薄く表示）
+            for i, bar in enumerate(bars):
+                width = bar.get_width()
+                label_text = texts[i]
+                ax.text(width + 5, bar.get_y() + bar.get_height()/2, label_text, 
+                        ha='left', va='center', fontsize=10, color='#333333')
+
+            # X軸の設定
+            ax.set_xlabel('Achievement Rate (%)', fontsize=9, color='gray')
             ax.grid(axis='x', linestyle=':', alpha=0.5)
             
-            # グラフの幅（余白）を固定して揃える
-            # left, right, top, bottom は 0.0 ~ 1.0 の割合
-            # ここを固定することで、ラベルの長さに依存せずバーの開始位置が揃う
-            plt.subplots_adjust(left=0.02, right=0.98, top=0.8, bottom=0.2)
+            # 枠線を消す
+            for spine in ax.spines.values():
+                spine.set_visible(False)
+            ax.tick_params(left=False) # Y軸の刻みを消す
             
+            plt.tight_layout()
             return fig
 
-        # グラフの表示
-        # 文字化け対策のため、ラベルを英語表記に変更
-        st.pyplot(create_progress_chart("Calories", total_cal, target_cal, "kcal", "#4CAF50"))
+        # データ作成
+        chart_data = {
+            "Calories": {"current": total_cal, "target": target_cal, "unit": "kcal"},
+            "Protein":  {"current": total_p,   "target": target_p,   "unit": "g"},
+            "Fat":      {"current": total_f,   "target": target_f,   "unit": "g"},
+            "Carb":     {"current": total_c,   "target": target_c,   "unit": "g"}
+        }
         
-        st.pyplot(create_progress_chart("Protein", total_p, target_p, "g", "#2196F3"))
-        
-        st.pyplot(create_progress_chart("Fat", total_f, target_f, "g", "#FFC107"))
-        
-        st.pyplot(create_progress_chart("Carb", total_c, target_c, "g", "#009688"))
-        
+        # グラフ描画
+        st.pyplot(create_summary_chart(chart_data))
+
+        # アドバイス
         st.divider()
         st.info("💡 AIアドバイス")
         rem_cal = target_cal - total_cal
@@ -330,7 +329,6 @@ def main_app():
 
 # --- アプリ起動 ---
 if "user" not in st.session_state:
-    # 外部ファイルの関数を呼び出す（supabaseクライアントを渡す）
     login_signup(supabase)
 else:
     main_app()
