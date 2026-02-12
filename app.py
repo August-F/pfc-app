@@ -87,7 +87,7 @@ def save_meal_log(user_id, meal_date, meal_type, text, p, f, c, cal):
 
 def analyze_meal_with_gemini(text, model_name="gemini-2.5-flash"):
     """GeminiでPFCとカロリーを解析"""
-    if len(text) < 2: return 0, 0, 0, 0
+    if len(text) < 2: return None
     try:
         model = genai.GenerativeModel(model_name)
         
@@ -105,8 +105,12 @@ def analyze_meal_with_gemini(text, model_name="gemini-2.5-flash"):
         data = json.loads(json_str)
         return data.get("p", 0), data.get("f", 0), data.get("c", 0), data.get("cal", 0)
     except Exception as e:
-        st.error(f"AI解析エラー: {e}")
-        return 0, 0, 0, 0
+        error_msg = str(e)
+        if "429" in error_msg:
+            st.error("⚠️ AIモデルの利用制限（アクセス集中、レート制限など）により解析できませんでした。時間をおくか、サイドバーから別のモデルに変更して試してください。")
+        else:
+            st.error(f"⚠️ AI解析エラーが発生しました: {error_msg}")
+        return None
 
 # --- メインアプリ ---
 def main_app():
@@ -147,41 +151,43 @@ def main_app():
         )
 
         st.divider()
-        st.header("⚙️ 設定・目標")
+        # st.header("⚙️ 設定・目標") # ヘッダーを削除し、expanderのラベルにします
         
         profile = get_user_profile(user.id)
         
-        with st.form("profile_form"):
-            decl = st.text_input("🔥 宣言 (My Goal)", value=profile.get("declaration") or "")
-            
-            st.subheader("目標数値")
-            t_cal = st.number_input("目標カロリー (kcal)", value=profile.get("target_calories", 2000))
-            t_p = st.number_input("目標 P (g)", value=profile.get("target_p", 100))
-            t_f = st.number_input("目標 F (g)", value=profile.get("target_f", 60))
-            t_c = st.number_input("目標 C (g)", value=profile.get("target_c", 250))
-            
-            st.subheader("好み・要望")
-            likes = st.text_area("好きな食べ物", value=profile.get("likes") or "")
-            dislikes = st.text_area("苦手な食べ物", value=profile.get("dislikes") or "")
-            prefs = st.text_area("その他要望 (調理など)", value=profile.get("preferences") or "")
-            
-            if st.form_submit_button("設定を保存"):
-                updates = {
-                    "declaration": decl,
-                    "target_calories": t_cal,
-                    "target_p": t_p, "target_f": t_f, "target_c": t_c,
-                    "likes": likes, "dislikes": dislikes, "preferences": prefs
-                }
-                update_user_profile(user.id, updates)
-                st.success("保存しました")
-                time.sleep(0.5)
-                st.rerun()
+        # expanderで折りたたみ可能にする
+        with st.expander("⚙️ 設定・目標", expanded=False):
+            with st.form("profile_form"):
+                decl = st.text_input("🔥 宣言 (My Goal)", value=profile.get("declaration") or "")
+                
+                st.subheader("目標数値")
+                t_cal = st.number_input("目標カロリー (kcal)", value=profile.get("target_calories", 2000))
+                t_p = st.number_input("目標 P (g)", value=profile.get("target_p", 100))
+                t_f = st.number_input("目標 F (g)", value=profile.get("target_f", 60))
+                t_c = st.number_input("目標 C (g)", value=profile.get("target_c", 250))
+                
+                st.subheader("好み・要望")
+                likes = st.text_area("好きな食べ物", value=profile.get("likes") or "")
+                dislikes = st.text_area("苦手な食べ物", value=profile.get("dislikes") or "")
+                prefs = st.text_area("その他要望 (調理など)", value=profile.get("preferences") or "")
+                
+                if st.form_submit_button("設定を保存"):
+                    updates = {
+                        "declaration": decl,
+                        "target_calories": t_cal,
+                        "target_p": t_p, "target_f": t_f, "target_c": t_c,
+                        "likes": likes, "dislikes": dislikes, "preferences": prefs
+                    }
+                    update_user_profile(user.id, updates)
+                    st.success("保存しました")
+                    time.sleep(0.5)
+                    st.rerun()
 
     # --- メイン画面：日付ナビゲーション ---
     st.title("🍽️ AI PFC Manager")
     
     if profile.get("declaration"):
-        st.info(f"🔥 **Goal:** {profile.get('declaration')}")
+        st.info(f"🔥 **Goal: {profile.get('declaration')}**")
 
     col_prev, col_date, col_next = st.columns([1, 4, 1])
     with col_prev:
@@ -212,11 +218,17 @@ def main_app():
             submitted = st.form_submit_button("AI解析して記録")
             
             if submitted:
-                p, f, c, cal = analyze_meal_with_gemini(food_text, selected_model)
-                save_meal_log(user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal)
-                st.success(f"記録しました！ {cal}kcal (P{p} F{f} C{c})")
-                time.sleep(1)
-                st.rerun()
+                # 解析結果を受け取る
+                result = analyze_meal_with_gemini(food_text, selected_model)
+                
+                # 結果がNoneでない（成功した）場合のみ保存する
+                if result:
+                    p, f, c, cal = result
+                    save_meal_log(user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal)
+                    st.success(f"記録しました！ {cal}kcal (P{p} F{f} C{c})")
+                    time.sleep(1)
+                    st.rerun()
+                # エラーの場合は analyze_meal_with_gemini 内で st.error が表示され、保存処理はスキップされる
         
         st.subheader("履歴")
         try:
