@@ -5,6 +5,7 @@ import google.generativeai as genai
 import json
 import time
 from datetime import datetime, timedelta, date
+import matplotlib.pyplot as plt # グラフ描画用にインポート追加
 
 # 別ファイルからログイン関数をインポート
 from auth import login_signup
@@ -264,16 +265,58 @@ def main_app():
         target_f = profile.get("target_f", 60)
         target_c = profile.get("target_c", 250)
 
-        st.write(f"**Total Calories: {total_cal} / {target_cal} kcal**")
-        st.progress(min(total_cal / target_cal, 1.0))
+        # ---------------------------------------------------------
+        # カスタムグラフ描画関数 (Matplotlib使用)
+        # ---------------------------------------------------------
+        def create_progress_chart(label, current, target, unit, base_color):
+            """目標線(点線)と超過表示付きのグラフを作成"""
+            fig, ax = plt.subplots(figsize=(6, 1.2))
+            
+            # 背景透明化
+            fig.patch.set_alpha(0)
+            ax.patch.set_alpha(0)
 
-        def pfc_meter(label, current, target, color):
-            st.write(f"**{label}: {current} / {target} g**")
-            st.progress(min(current / target, 1.0))
+            # 超過判定：目標を超えたら赤色(#FF4B4B)にする
+            is_exceeded = current > target
+            bar_color = base_color if not is_exceeded else "#FF4B4B"
+            
+            # バーの描画
+            ax.barh(0, current, color=bar_color, height=0.6, align='center', zorder=3)
+            
+            # 目標ライン（黒い点線）を描画
+            # vlines(x, ymin, ymax)
+            ax.vlines(target, -0.4, 0.4, colors='black', linestyles='dashed', linewidth=2, zorder=4)
+            
+            # タイトル（ラベルと数値）
+            ax.set_title(f"{label}: {current} / {target} {unit}", loc='left', fontsize=10, fontweight='bold', color='#333333')
+            
+            # 軸の装飾を消す
+            ax.set_yticks([]) # Y軸ラベルなし
+            for spine in ax.spines.values():
+                spine.set_visible(False) # 枠線なし
+            
+            # X軸の範囲設定（目標値か現在値の大きい方 + 余白）
+            max_val = max(current, target) * 1.15
+            ax.set_xlim(0, max_val if max_val > 0 else 1)
+            
+            # X軸のグリッド線（薄く表示）
+            ax.grid(axis='x', linestyle=':', alpha=0.5)
+            
+            plt.tight_layout()
+            return fig
+
+        # グラフの表示
+        # カロリー: 緑
+        st.pyplot(create_progress_chart("Total Calories", total_cal, target_cal, "kcal", "#4CAF50"))
         
-        pfc_meter("Protein (タンパク質)", total_p, target_p, "red")
-        pfc_meter("Fat (脂質)", total_f, target_f, "yellow")
-        pfc_meter("Carb (炭水化物)", total_c, target_c, "green")
+        # P: 青
+        st.pyplot(create_progress_chart("Protein (タンパク質)", total_p, target_p, "g", "#2196F3"))
+        
+        # F: 黄色 (脂質は注意が必要なので黄色系)
+        st.pyplot(create_progress_chart("Fat (脂質)", total_f, target_f, "g", "#FFC107"))
+        
+        # C: ターコイズ/緑
+        st.pyplot(create_progress_chart("Carb (炭水化物)", total_c, target_c, "g", "#009688"))
         
         st.divider()
         st.info("💡 AIアドバイス")
