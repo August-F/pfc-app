@@ -133,6 +133,7 @@ def generate_meal_advice(model_name, profile, logged_meals, totals, targets):
         return res.text.strip()
     except Exception as e:
         error_msg = str(e)
+        print(f"[AI Advice Error] {error_msg}")
         if "429" in error_msg:
             return None
         return None
