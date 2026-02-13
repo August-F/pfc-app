@@ -224,10 +224,10 @@ def main_app():
     target_c = profile.get("target_c", 250)
 
     chart_data = {
-        "Calories": {"current": total_cal, "target": target_cal, "unit": "kcal"},
-        "Protein":  {"current": total_p,   "target": target_p,   "unit": "g"},
-        "Fat":      {"current": total_f,   "target": target_f,   "unit": "g"},
-        "Carb":     {"current": total_c,   "target": target_c,   "unit": "g"},
+        "Cal": {"current": total_cal, "target": target_cal, "unit": "kcal"},
+        "P":   {"current": total_p,   "target": target_p,   "unit": "g"},
+        "F":   {"current": total_f,   "target": target_f,   "unit": "g"},
+        "C":   {"current": total_c,   "target": target_c,   "unit": "g"},
     }
     st.pyplot(create_summary_chart(chart_data))
 
