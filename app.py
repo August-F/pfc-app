@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import time
+import base64
+import urllib.parse
 from datetime import timedelta, date
 
 from config import get_supabase, init_gemini
@@ -225,7 +227,8 @@ def main_app():
         "F":   {"current": total_f,   "target": target_f,   "unit": "g"},
         "C":   {"current": total_c,   "target": target_c,   "unit": "g"},
     }
-    st.pyplot(create_summary_chart(chart_data))
+    chart_fig = create_summary_chart(chart_data)
+    st.pyplot(chart_fig)
 
     # --- AIアドバイス ---
     totals = {"cal": total_cal, "p": total_p, "f": total_f, "c": total_c}
@@ -241,7 +244,9 @@ def main_app():
     advice_text = st.session_state.get(advice_key)
     if advice_text:
         st.caption("💡 AIアドバイス")
-        st.write(advice_text)
+        # 改行をMarkdownの改行（末尾スペース2つ）に変換して表示
+        formatted = advice_text.replace("\n", "  \n")
+        st.markdown(formatted)
     else:
         rem_cal = target_cal - total_cal
         if rem_cal > 0:
@@ -261,6 +266,58 @@ def main_app():
                     st.rerun()
     else:
         st.info("まだ記録がありません")
+
+    # --- 共有 ---
+    st.divider()
+    st.subheader("共有")
+
+    # 共有テキスト生成
+    share_lines = [f"🍽️ {display_date} の食事記録"]
+    if logged_meals:
+        for m in logged_meals:
+            share_lines.append(
+                f"・{m['meal_type']}: {m['food_name']} "
+                f"({m['calories']}kcal / P:{m['p_val']} F:{m['f_val']} C:{m['c_val']})"
+            )
+        share_lines.append(f"\n合計: {int(total_cal)}kcal（P:{int(total_p)}g F:{int(total_f)}g C:{int(total_c)}g）")
+        share_lines.append(f"目標: {target_cal}kcal（P:{target_p}g F:{target_f}g C:{target_c}g）")
+    else:
+        share_lines.append("記録なし")
+    share_text = "\n".join(share_lines)
+
+    # クリップボードにコピー（JavaScript）
+    share_text_escaped = base64.b64encode(share_text.encode()).decode()
+    st.markdown(
+        f"""
+        <button onclick="
+            const text = atob('{share_text_escaped}');
+            navigator.clipboard.writeText(text).then(() => {{
+                this.textContent = '✅ コピーしました！';
+                setTimeout(() => {{ this.textContent = '📋 クリップボードにコピー'; }}, 2000);
+            }});
+        " style="
+            width:100%; padding:0.5rem; margin-bottom:0.5rem;
+            border:1px solid #ccc; border-radius:0.5rem;
+            background:var(--secondary-background-color);
+            color:inherit; cursor:pointer; font-size:0.9rem;
+        ">📋 クリップボードにコピー</button>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # LINEで共有
+    line_text = urllib.parse.quote(share_text)
+    st.markdown(
+        f"""
+        <a href="https://line.me/R/share?text={line_text}" target="_blank" style="
+            display:block; width:100%; padding:0.5rem; margin-bottom:0.5rem;
+            border:1px solid #06C755; border-radius:0.5rem;
+            background:#06C755; color:white; text-align:center;
+            text-decoration:none; font-size:0.9rem; box-sizing:border-box;
+        ">💬 LINEで共有</a>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 # --- アプリ起動 ---
