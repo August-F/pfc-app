@@ -9,6 +9,7 @@ from services import (
     get_available_gemini_models, analyze_meal_with_gemini,
     get_user_profile, update_user_profile,
     save_meal_log, get_meal_logs, delete_meal_log,
+    generate_meal_advice,
 )
 from charts import create_summary_chart
 
@@ -226,12 +227,27 @@ def main_app():
     }
     st.pyplot(create_summary_chart(chart_data))
 
-    # アドバイス（グラフ直下に1行表示）
-    rem_cal = target_cal - total_cal
-    if rem_cal > 0:
-        st.caption(f"💡 あと **{rem_cal} kcal** 食べられます")
+    # --- AIアドバイス ---
+    totals = {"cal": total_cal, "p": total_p, "f": total_f, "c": total_c}
+    targets = {"cal": target_cal, "p": target_p, "f": target_f, "c": target_c}
+    logged_meals = logs.data if logs and logs.data else []
+
+    # キャッシュキー（日付＋記録数が変わったら再生成）
+    advice_key = f"advice_{current_date_str}_{len(logged_meals)}"
+    if advice_key not in st.session_state:
+        advice = generate_meal_advice(selected_model, profile, logged_meals, totals, targets)
+        st.session_state[advice_key] = advice
+
+    advice_text = st.session_state.get(advice_key)
+    if advice_text:
+        st.caption("💡 AIアドバイス")
+        st.write(advice_text)
     else:
-        st.caption(f"⚠️ 目標カロリーを **{abs(rem_cal)} kcal** オーバーしています")
+        rem_cal = target_cal - total_cal
+        if rem_cal > 0:
+            st.caption(f"💡 あと **{rem_cal} kcal** 食べられます")
+        else:
+            st.caption(f"⚠️ 目標カロリーを **{abs(rem_cal)} kcal** オーバーしています")
 
     # --- 履歴 ---
     st.subheader("履歴")
