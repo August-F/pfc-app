@@ -255,9 +255,11 @@ def main_app():
             st.caption(f"⚠️ 目標カロリーを **{abs(rem_cal)} kcal** オーバーしています")
 
     # --- 履歴 ---
+    MEAL_ORDER = {"朝食": 0, "昼食": 1, "夕食": 2, "間食": 3}
     st.subheader("履歴")
     if logs and logs.data:
-        for log in logs.data:
+        sorted_logs = sorted(logs.data, key=lambda x: MEAL_ORDER.get(x["meal_type"], 9))
+        for log in sorted_logs:
             with st.expander(f"{log['meal_type']}: {log['food_name'][:15]}..."):
                 st.write(f"**{log['food_name']}**")
                 st.write(f"🔥 {log['calories']}kcal | P:{log['p_val']} F:{log['f_val']} C:{log['c_val']}")
