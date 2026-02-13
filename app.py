@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import time
+import json
 import base64
 import urllib.parse
 from datetime import timedelta, date
@@ -237,13 +238,24 @@ def main_app():
     targets = {"cal": target_cal, "p": target_p, "f": target_f, "c": target_c}
     logged_meals = logs.data if logs and logs.data else []
 
-    advice_key = f"advice_{current_date_str}_{len(logged_meals)}"
-    if advice_key not in st.session_state or st.session_state[advice_key] is None:
-        with st.spinner("🏋️ アドバイスを考え中..."):
-            advice = generate_meal_advice(selected_model, profile, logged_meals, totals, targets)
-            st.session_state[advice_key] = advice
+    @st.cache_data(ttl=3600, show_spinner="🏋️ アドバイスを考え中...")
+    def get_advice(date_str, meal_count, model, profile_json, meals_json, totals_json, targets_json):
+        profile_d = json.loads(profile_json)
+        meals_d = json.loads(meals_json)
+        totals_d = json.loads(totals_json)
+        targets_d = json.loads(targets_json)
+        return generate_meal_advice(model, profile_d, meals_d, totals_d, targets_d)
 
-    advice_text = st.session_state.get(advice_key)
+    advice_text = get_advice(
+        current_date_str,
+        len(logged_meals),
+        selected_model,
+        json.dumps(profile, ensure_ascii=False),
+        json.dumps(logged_meals, ensure_ascii=False),
+        json.dumps(totals),
+        json.dumps(targets),
+    )
+
     if advice_text:
         st.caption("💡 AIアドバイス")
         formatted = advice_text.replace("\n", "  \n")
