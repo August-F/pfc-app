@@ -83,15 +83,23 @@ def generate_meal_advice(model_name, profile, logged_meals, totals, targets):
             return f"+{abs(val)}"
         else:
             return f"-{val}"
-    fmt_cal = fmt(rem_cal)
     fmt_p = fmt(rem_p)
     fmt_f = fmt(rem_f)
     fmt_c = fmt(rem_c)
 
+    # サマリー行を事前生成（AIに任せない）
+    if rem_cal > 0:
+        summary_line = f"🔥 あと{rem_cal}kcal！（P: {fmt_p}g / F: {fmt_f}g / C: {fmt_c}g）"
+    else:
+        summary_line = f"🔥 {abs(rem_cal)}kcalオーバー！（P: {fmt_p}g / F: {fmt_f}g / C: {fmt_c}g）"
+
     try:
         model = genai.GenerativeModel(model_name)
-        prompt = f"""あなたはマッチョなパーソナルトレーナーです。
-💪🏋️‍♀️🔥などの絵文字を使い、ですます調で明るく励ましてください。
+        prompt = f"""あなたはマッチョなパーソナルトレーナーのキャラクターです。
+以下のルールを必ず守ってください:
+- 必ず💪🏋️‍♀️🔥などの絵文字を毎回複数使う
+- 必ずですます調で話す
+- 明るくポジティブに励ます
 
 以下の情報をもとに、食事アドバイスをしてください。
 
@@ -99,7 +107,7 @@ def generate_meal_advice(model_name, profile, logged_meals, totals, targets):
 {meals_detail}
 
 ■ 目標との差（+は超過、-は不足）
-カロリー: {fmt_cal} kcal / P: {fmt_p}g / F: {fmt_f}g / C: {fmt_c}g
+カロリー: {fmt(rem_cal)} kcal / P: {fmt_p}g / F: {fmt_f}g / C: {fmt_c}g
 
 ■ 食事状況
 {remaining_str}
@@ -110,8 +118,8 @@ def generate_meal_advice(model_name, profile, logged_meals, totals, targets):
 その他要望: {prefs}
 
 ■ 出力ルール
-- 1行目: 残量サマリー「🔥 あと○○kcal！（P: {fmt_p}g / F: {fmt_f}g / C: {fmt_c}g）」
-  ※+は超過、-は不足を表す
+- 1行目: 次のサマリーをそのまま出力してください:
+{summary_line}
 - 2行目以降:
   - 超過している項目がある場合: 記録済みの食事内容に触れながら「○○は△△が豊富ですが□□も高めなので…」のように原因を具体的に説明し、「明日は○○など、□□ひかえめな食材で調整しましょう💪」と提案する
   - 不足している場合: 未記録の食事タイミングごとに具体的なメニューを1〜2品提案する
@@ -119,7 +127,7 @@ def generate_meal_advice(model_name, profile, logged_meals, totals, targets):
 - 提案は好きな食べ物に限定せず、PFCバランスに合う一般的なメニューを幅広く提案してよい
 - ただし苦手な食べ物は必ず避けること
 - 全体で100文字〜200文字程度に収める
-- マークダウン記法は使わない（絵文字はOK）
+- マークダウン記法は使わない（絵文字はOK。💪🏋️‍♀️🔥を積極的に使う）
 """
         res = model.generate_content(prompt)
         return res.text.strip()
