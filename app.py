@@ -53,7 +53,7 @@ if "current_date" not in st.session_state:
 
 # NOTE: ログイン無効化中のデフォルトユーザー
 #       再度ログインを有効にする場合は、この部分を削除してください。
-DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"
+DEFAULT_USER_ID = "d8875444-a88a-4a31-947d-2174eefb80f0"
 DEFAULT_USER_EMAIL = "guest@example.com"
 
 class _DefaultUser:
