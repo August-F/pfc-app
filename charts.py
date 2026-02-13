@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def create_summary_chart(data_dict):
@@ -51,8 +52,12 @@ def create_summary_chart(data_dict):
     ax.set_yticklabels(labels, fontsize=9, fontweight='bold', color='#333333')
 
     # バーの右側に数値を表示
-    max_ratio = max(max(ratios) if ratios else 0, 120)
-    ax.set_xlim(0, max_ratio * 1.35)
+    max_ratio = max(ratios) if ratios else 0
+    # 目標ライン(100%)は常に表示し、バーが超えた場合はそこに合わせる
+    x_max = max(max_ratio, 100)
+    # ラベル表示用の余白を追加（割合に応じて調整）
+    x_max = x_max + max(x_max * 0.35, 30)
+    ax.set_xlim(0, x_max)
 
     for i, bar in enumerate(bars):
         width = bar.get_width()
@@ -61,6 +66,8 @@ def create_summary_chart(data_dict):
                 ha='left', va='center', fontsize=8, color='#333333')
 
     # X軸の設定
+    tick_max = int(x_max // 50 + 1) * 50
+    ax.set_xticks(np.arange(0, tick_max + 1, 50))
     ax.set_xlabel('Achievement Rate (%)', fontsize=8, color='gray')
     ax.grid(axis='x', linestyle=':', alpha=0.5)
 
