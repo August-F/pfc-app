@@ -134,9 +134,8 @@ def generate_meal_advice(model_name, profile, logged_meals, totals, targets):
     except Exception as e:
         error_msg = str(e)
         print(f"[AI Advice Error] {error_msg}")
-        if "429" in error_msg:
-            return None
-        return None
+        # 例外をraiseすることでst.cache_dataにキャッシュされるのを防ぐ
+        raise RuntimeError(f"AI Advice Error: {error_msg}")
 
 
 # --- DB操作: profiles ---
