@@ -135,16 +135,20 @@ def main_app():
         st.info(f"🔥 **Goal: {profile.get('declaration')}**")
 
     # --- 日付ナビゲーション ---
-    col_prev, col_date, col_next = st.columns([1, 3, 1])
+    display_date = st.session_state.current_date.strftime("%m/%d (%a)")
+    st.markdown(
+        f"<div style='display:flex; align-items:center; justify-content:center; gap:0.5rem;'>"
+        f"<span style='font-size:1.3rem; font-weight:bold;'>{display_date}</span>"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
+    col_prev, col_next = st.columns(2)
     with col_prev:
-        if st.button("◀"):
+        if st.button("◀ 前日", use_container_width=True):
             st.session_state.current_date -= timedelta(days=1)
             st.rerun()
-    with col_date:
-        display_date = st.session_state.current_date.strftime("%m/%d (%a)")
-        st.markdown(f"<h3 style='text-align:center; margin:0;'>📅 {display_date}</h3>", unsafe_allow_html=True)
     with col_next:
-        if st.button("▶"):
+        if st.button("翌日 ▶", use_container_width=True):
             st.session_state.current_date += timedelta(days=1)
             st.rerun()
 
