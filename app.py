@@ -276,7 +276,8 @@ def main_app():
     # 共有テキスト生成
     share_lines = [f"🍽️ {display_date} の食事記録"]
     if logged_meals:
-        for m in logged_meals:
+        sorted_share = sorted(logged_meals, key=lambda x: MEAL_ORDER.get(x["meal_type"], 9))
+        for m in sorted_share:
             share_lines.append(
                 f"・{m['meal_type']}: {m['food_name']} "
                 f"({m['calories']}kcal / P:{m['p_val']} F:{m['f_val']} C:{m['c_val']})"
