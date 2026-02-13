@@ -309,6 +309,9 @@ def main_app():
     # --- AIアドバイスを後から埋め込み ---
     advice_key = f"advice_{current_date_str}_{len(logged_meals)}"
     if advice_key not in st.session_state:
+        with advice_placeholder.container():
+            st.caption("💡 AIアドバイス")
+            st.info("🏋️ アドバイスを考え中...")
         advice = generate_meal_advice(selected_model, profile, logged_meals, totals, targets)
         st.session_state[advice_key] = advice
 
