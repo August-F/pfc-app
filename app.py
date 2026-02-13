@@ -43,13 +43,6 @@ st.markdown("""
         min-width: 260px;
         max-width: 260px;
     }
-    /* スマホでカラムの縦積みを防止 */
-    @media (max-width: 640px) {
-        [data-testid="stHorizontalBlock"] {
-            flex-wrap: nowrap !important;
-            gap: 0.3rem !important;
-        }
-    }
 </style>
 """, unsafe_allow_html=True)
 supabase = get_supabase()
@@ -142,22 +135,29 @@ def main_app():
         st.info(f"🔥 **Goal: {profile.get('declaration')}**")
 
     # --- 日付ナビゲーション ---
+    # query_paramsから日付を復元
+    params = st.query_params
+    if "date" in params:
+        try:
+            st.session_state.current_date = date.fromisoformat(params["date"])
+        except ValueError:
+            pass
+
+    prev_date = (st.session_state.current_date - timedelta(days=1)).isoformat()
+    next_date = (st.session_state.current_date + timedelta(days=1)).isoformat()
     display_date = st.session_state.current_date.strftime("%m/%d (%a)")
-    col_prev, col_date, col_next = st.columns([1, 2, 1])
-    with col_prev:
-        if st.button("◀", use_container_width=True):
-            st.session_state.current_date -= timedelta(days=1)
-            st.rerun()
-    with col_date:
-        st.markdown(
-            f"<div style='text-align:center; font-size:1.2rem; font-weight:bold; "
-            f"line-height:2.5rem; white-space:nowrap;'>{display_date}</div>",
-            unsafe_allow_html=True,
-        )
-    with col_next:
-        if st.button("▶", use_container_width=True):
-            st.session_state.current_date += timedelta(days=1)
-            st.rerun()
+
+    st.markdown(
+        f'<div style="display:flex; justify-content:center; align-items:center; '
+        f'gap:1.2rem; margin:0.5rem 0;">'
+        f'<a href="?date={prev_date}" target="_self" '
+        f'style="text-decoration:none; font-size:1.5rem;">◀</a>'
+        f'<span style="font-weight:bold; font-size:1.2rem;">{display_date}</span>'
+        f'<a href="?date={next_date}" target="_self" '
+        f'style="text-decoration:none; font-size:1.5rem;">▶</a>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
     st.divider()
 
