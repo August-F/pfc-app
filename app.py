@@ -45,15 +45,18 @@ st.markdown("""
     }
     /* タイミング選択のラジオボタンをボタン風に */
     div[data-testid="stRadio"] > div {
-        gap: 0.4rem !important;
+        gap: 0.3rem !important;
+        flex-wrap: nowrap !important;
     }
     div[data-testid="stRadio"] > div > label {
         background: var(--secondary-background-color);
         border-radius: 1.5rem;
-        padding: 0.35rem 0.9rem;
+        padding: 0.25rem 0.65rem;
         cursor: pointer;
         border: 2px solid transparent;
         transition: all 0.15s;
+        font-size: 0.85rem;
+        white-space: nowrap;
     }
     div[data-testid="stRadio"] > div > label:has(input:checked) {
         border-color: #4CAF50;
