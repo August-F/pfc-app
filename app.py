@@ -43,6 +43,26 @@ st.markdown("""
         min-width: 260px;
         max-width: 260px;
     }
+    /* タイミング選択のラジオボタンをボタン風に */
+    div[data-testid="stRadio"] > div {
+        gap: 0.4rem !important;
+    }
+    div[data-testid="stRadio"] > div > label {
+        background: var(--secondary-background-color);
+        border-radius: 1.5rem;
+        padding: 0.35rem 0.9rem;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: all 0.15s;
+    }
+    div[data-testid="stRadio"] > div > label:has(input:checked) {
+        border-color: #4CAF50;
+        background: rgba(76, 175, 80, 0.15);
+        font-weight: bold;
+    }
+    div[data-testid="stRadio"] > div > label > div:first-child {
+        display: none;  /* ラジオボタンの丸を非表示 */
+    }
 </style>
 """, unsafe_allow_html=True)
 supabase = get_supabase()
@@ -168,7 +188,7 @@ def main_app():
     # --- 食事入力 ---
     st.subheader("📝 食事を記録")
     with st.form("meal_input"):
-        meal_type = st.selectbox("タイミング", ["朝食", "昼食", "夕食", "間食"])
+        meal_type = st.radio("タイミング", ["朝食", "昼食", "夕食", "間食"], horizontal=True)
         food_text = st.text_area("食べたもの", height=80)
         submitted = st.form_submit_button("AI解析して記録")
 
