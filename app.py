@@ -232,11 +232,28 @@ def main_app():
     chart_fig = create_summary_chart(chart_data)
     st.pyplot(chart_fig)
 
-    # --- AIアドバイス（プレースホルダーを先に確保） ---
+    # --- AIアドバイス ---
     totals = {"cal": total_cal, "p": total_p, "f": total_f, "c": total_c}
     targets = {"cal": target_cal, "p": target_p, "f": target_f, "c": target_c}
     logged_meals = logs.data if logs and logs.data else []
-    advice_placeholder = st.empty()
+
+    advice_key = f"advice_{current_date_str}_{len(logged_meals)}"
+    if advice_key not in st.session_state or st.session_state[advice_key] is None:
+        with st.spinner("🏋️ アドバイスを考え中..."):
+            advice = generate_meal_advice(selected_model, profile, logged_meals, totals, targets)
+            st.session_state[advice_key] = advice
+
+    advice_text = st.session_state.get(advice_key)
+    if advice_text:
+        st.caption("💡 AIアドバイス")
+        formatted = advice_text.replace("\n", "  \n")
+        st.markdown(formatted)
+    else:
+        rem_cal = target_cal - total_cal
+        if rem_cal > 0:
+            st.caption(f"💡 あと **{rem_cal} kcal** 食べられます")
+        else:
+            st.caption(f"⚠️ 目標カロリーを **{abs(rem_cal)} kcal** オーバーしています")
 
     # --- 履歴 ---
     MEAL_ORDER = {"朝食": 0, "昼食": 1, "夕食": 2, "間食": 3}
@@ -305,28 +322,6 @@ def main_app():
         """,
         unsafe_allow_html=True,
     )
-
-    # --- AIアドバイスを後から埋め込み ---
-    advice_key = f"advice_{current_date_str}_{len(logged_meals)}"
-    if advice_key not in st.session_state or st.session_state[advice_key] is None:
-        with advice_placeholder.container():
-            st.caption("💡 AIアドバイス")
-            st.info("🏋️ アドバイスを考え中...")
-        advice = generate_meal_advice(selected_model, profile, logged_meals, totals, targets)
-        st.session_state[advice_key] = advice
-
-    advice_text = st.session_state.get(advice_key)
-    with advice_placeholder.container():
-        if advice_text:
-            st.caption("💡 AIアドバイス")
-            formatted = advice_text.replace("\n", "  \n")
-            st.markdown(formatted)
-        else:
-            rem_cal = target_cal - total_cal
-            if rem_cal > 0:
-                st.caption(f"💡 あと **{rem_cal} kcal** 食べられます")
-            else:
-                st.caption(f"⚠️ 目標カロリーを **{abs(rem_cal)} kcal** オーバーしています")
 
 
 # --- アプリ起動 ---
