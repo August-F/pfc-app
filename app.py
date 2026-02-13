@@ -43,23 +43,12 @@ st.markdown("""
         min-width: 260px;
         max-width: 260px;
     }
-    /* 日付ナビを横並び強制 */
-    .date-nav [data-testid="stHorizontalBlock"] {
-        flex-wrap: nowrap !important;
-        gap: 0.3rem !important;
-    }
-    .date-nav [data-testid="stHorizontalBlock"] [data-testid="stColumn"] {
-        min-width: 0 !important;
-        flex: unset !important;
-        width: auto !important;
-    }
-    .date-nav [data-testid="stHorizontalBlock"] [data-testid="stColumn"]:nth-child(2) {
-        flex: 1 !important;
-    }
-    .date-nav .stButton > button {
-        min-height: 2rem;
-        padding: 0.2rem 0.5rem;
-        font-size: 0.9rem;
+    /* スマホでカラムの縦積みを防止 */
+    @media (max-width: 640px) {
+        [data-testid="stHorizontalBlock"] {
+            flex-wrap: nowrap !important;
+            gap: 0.3rem !important;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -154,9 +143,7 @@ def main_app():
 
     # --- 日付ナビゲーション ---
     display_date = st.session_state.current_date.strftime("%m/%d (%a)")
-    nav = st.container()
-    nav.markdown('<div class="date-nav">', unsafe_allow_html=True)
-    col_prev, col_date, col_next = nav.columns([1, 2, 1])
+    col_prev, col_date, col_next = st.columns([1, 2, 1])
     with col_prev:
         if st.button("◀", use_container_width=True):
             st.session_state.current_date -= timedelta(days=1)
@@ -164,14 +151,13 @@ def main_app():
     with col_date:
         st.markdown(
             f"<div style='text-align:center; font-size:1.2rem; font-weight:bold; "
-            f"line-height:2.2rem; white-space:nowrap;'>{display_date}</div>",
+            f"line-height:2.5rem; white-space:nowrap;'>{display_date}</div>",
             unsafe_allow_html=True,
         )
     with col_next:
         if st.button("▶", use_container_width=True):
             st.session_state.current_date += timedelta(days=1)
             st.rerun()
-    nav.markdown('</div>', unsafe_allow_html=True)
 
     st.divider()
 
