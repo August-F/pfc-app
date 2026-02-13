@@ -36,19 +36,19 @@ def create_summary_chart(data_dict):
             colors.append("#4CAF50")   # 緑 (あすけん風)
 
     # 描画
-    fig, ax = plt.subplots(figsize=(6, 3.5))
+    fig, ax = plt.subplots(figsize=(5, 2.5))
     fig.patch.set_alpha(0)
     ax.patch.set_alpha(0)
 
     # バーの描画
-    bars = ax.barh(labels, ratios, color=colors, height=0.6, zorder=3)
+    bars = ax.barh(labels, ratios, color=colors, height=0.55, zorder=3)
 
     # 目標ライン（100%の位置）
     ax.axvline(100, color='black', linestyle='--', linewidth=1.5, zorder=4)
 
     # ラベルと数値の表示
     ax.set_yticks(range(len(labels)))
-    ax.set_yticklabels(labels, fontsize=11, fontweight='bold', color='#333333')
+    ax.set_yticklabels(labels, fontsize=9, fontweight='bold', color='#333333')
 
     # バーの右側に数値を表示
     max_ratio = max(max(ratios) if ratios else 0, 120)
@@ -57,11 +57,11 @@ def create_summary_chart(data_dict):
     for i, bar in enumerate(bars):
         width = bar.get_width()
         label_text = texts[i]
-        ax.text(width + 5, bar.get_y() + bar.get_height() / 2, label_text,
-                ha='left', va='center', fontsize=10, color='#333333')
+        ax.text(width + 3, bar.get_y() + bar.get_height() / 2, label_text,
+                ha='left', va='center', fontsize=8, color='#333333')
 
     # X軸の設定
-    ax.set_xlabel('Achievement Rate (%)', fontsize=9, color='gray')
+    ax.set_xlabel('Achievement Rate (%)', fontsize=8, color='gray')
     ax.grid(axis='x', linestyle=':', alpha=0.5)
 
     # 枠線を消す
