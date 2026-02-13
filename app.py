@@ -4,7 +4,7 @@ import time
 from datetime import timedelta, date
 
 from config import get_supabase, init_gemini
-from auth import login_signup
+# from auth import login_signup  # NOTE: ログイン無効化中
 from services import (
     get_available_gemini_models, analyze_meal_with_gemini,
     get_user_profile, update_user_profile,
@@ -20,17 +20,32 @@ init_gemini()
 if "current_date" not in st.session_state:
     st.session_state.current_date = date.today()
 
+# NOTE: ログイン無効化中のデフォルトユーザー
+#       再度ログインを有効にする場合は、この部分を削除してください。
+DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"
+DEFAULT_USER_EMAIL = "guest@example.com"
+
+class _DefaultUser:
+    """ログイン無効化時に使用するダミーユーザー"""
+    def __init__(self):
+        self.id = DEFAULT_USER_ID
+        self.email = DEFAULT_USER_EMAIL
+
+if "user" not in st.session_state:
+    st.session_state["user"] = _DefaultUser()
+
 
 # --- サイドバー ---
 def render_sidebar(user):
     """サイドバーを描画し、(選択モデル, プロフィール) を返す"""
     with st.sidebar:
-        st.write(f"User: {user.email}")
-        if st.button("ログアウト"):
-            supabase.auth.sign_out()
-            st.session_state.pop("user", None)
-            st.session_state.pop("session", None)
-            st.rerun()
+        # NOTE: ログイン無効化中のため、ログアウトボタンを非表示にしています。
+        # st.write(f"User: {user.email}")
+        # if st.button("ログアウト"):
+        #     supabase.auth.sign_out()
+        #     st.session_state.pop("user", None)
+        #     st.session_state.pop("session", None)
+        #     st.rerun()
 
         st.divider()
 
@@ -176,7 +191,11 @@ def main_app():
 
 
 # --- アプリ起動 ---
-if "user" not in st.session_state:
-    login_signup(supabase)
-else:
-    main_app()
+# NOTE: ログイン機能は一時的に無効化しています。
+#       Streamlitの制限上アプリがpublicのため、認証処理をスキップしています。
+#       再度有効にする場合は、以下のコメントアウトを解除してください。
+# if "user" not in st.session_state:
+#     login_signup(supabase)
+# else:
+#     main_app()
+main_app()
