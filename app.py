@@ -13,7 +13,38 @@ from services import (
 from charts import create_summary_chart
 
 # --- 初期設定 ---
-st.set_page_config(page_title="AI PFC Manager", layout="wide")
+st.set_page_config(page_title="AI PFC Manager", layout="centered")
+
+# --- スマホ向けCSS ---
+st.markdown("""
+<style>
+    /* メインコンテンツの余白を詰める */
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        padding-left: 0.8rem;
+        padding-right: 0.8rem;
+    }
+    /* タイトルのフォントサイズを縮小 */
+    h1 { font-size: 1.5rem !important; }
+    h2 { font-size: 1.2rem !important; }
+    h3 { font-size: 1.1rem !important; }
+    /* ボタンを押しやすく */
+    .stButton > button {
+        width: 100%;
+        min-height: 2.5rem;
+    }
+    /* expanderの中身の余白を詰める */
+    .streamlit-expanderContent {
+        padding: 0.3rem 0.5rem;
+    }
+    /* サイドバーの幅を狭く */
+    [data-testid="stSidebar"] {
+        min-width: 260px;
+        max-width: 260px;
+    }
+</style>
+""", unsafe_allow_html=True)
 supabase = get_supabase()
 init_gemini()
 
@@ -104,90 +135,89 @@ def main_app():
         st.info(f"🔥 **Goal: {profile.get('declaration')}**")
 
     # --- 日付ナビゲーション ---
-    col_prev, col_date, col_next = st.columns([1, 4, 1])
+    col_prev, col_date, col_next = st.columns([1, 3, 1])
     with col_prev:
-        if st.button("＜ 前日"):
+        if st.button("◀"):
             st.session_state.current_date -= timedelta(days=1)
             st.rerun()
     with col_date:
-        display_date = st.session_state.current_date.strftime("%Y年 %m月 %d日 (%a)")
-        st.markdown(f"<h3 style='text-align: center;'>📅 {display_date}</h3>", unsafe_allow_html=True)
+        display_date = st.session_state.current_date.strftime("%m/%d (%a)")
+        st.markdown(f"<h3 style='text-align:center; margin:0;'>📅 {display_date}</h3>", unsafe_allow_html=True)
     with col_next:
-        if st.button("翌日 ＞"):
+        if st.button("▶"):
             st.session_state.current_date += timedelta(days=1)
             st.rerun()
 
     st.divider()
 
-    # --- データ取得（両カラムで使用） ---
+    # --- データ取得 ---
     current_date_str = st.session_state.current_date.isoformat()
     logs = get_meal_logs(supabase, user.id, current_date_str)
 
-    col_input, col_stats = st.columns([1, 1])
+    # --- 食事入力 ---
+    st.subheader("📝 食事を記録")
+    with st.form("meal_input"):
+        meal_type = st.selectbox("タイミング", ["朝食", "昼食", "夕食", "間食"])
+        food_text = st.text_area("食べたもの", height=80)
+        submitted = st.form_submit_button("AI解析して記録")
 
-    # --- 左カラム：食事入力 + 履歴 ---
-    with col_input:
-        st.subheader("📝 食事を記録")
-        with st.form("meal_input"):
-            meal_type = st.selectbox("タイミング", ["朝食", "昼食", "夕食", "間食"])
-            food_text = st.text_area("食べたもの", height=100)
-            submitted = st.form_submit_button("AI解析して記録")
+        if submitted:
+            result = analyze_meal_with_gemini(food_text, selected_model)
+            if result:
+                p, f, c, cal = result
+                save_meal_log(supabase, user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal)
+                st.success(f"記録しました！ {cal}kcal")
+                time.sleep(1)
+                st.rerun()
 
-            if submitted:
-                result = analyze_meal_with_gemini(food_text, selected_model)
-                if result:
-                    p, f, c, cal = result
-                    save_meal_log(supabase, user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal)
-                    st.success(f"記録しました！ {cal}kcal")
-                    time.sleep(1)
+    # --- 履歴 ---
+    st.subheader("履歴")
+    if logs and logs.data:
+        for log in logs.data:
+            with st.expander(f"{log['meal_type']}: {log['food_name'][:15]}..."):
+                st.write(f"**{log['food_name']}**")
+                st.write(f"🔥 {log['calories']}kcal | P:{log['p_val']} F:{log['f_val']} C:{log['c_val']}")
+                if st.button("削除", key=f"del_{log['id']}"):
+                    delete_meal_log(supabase, log['id'])
                     st.rerun()
+    else:
+        st.info("まだ記録がありません")
 
-        st.subheader("履歴")
-        if logs and logs.data:
-            for log in logs.data:
-                with st.expander(f"{log['meal_type']}: {log['food_name'][:15]}..."):
-                    st.write(f"**{log['food_name']}**")
-                    st.write(f"🔥 {log['calories']}kcal | P:{log['p_val']} F:{log['f_val']} C:{log['c_val']}")
-                    if st.button("削除", key=f"del_{log['id']}"):
-                        delete_meal_log(supabase, log['id'])
-                        st.rerun()
-        else:
-            st.info("まだ記録がありません")
+    st.divider()
 
-    # --- 右カラム：グラフ + アドバイス ---
-    with col_stats:
-        st.subheader("📊 本日の進捗")
+    # --- グラフ + アドバイス ---
+    st.subheader("📊 本日の進捗")
 
-        # 集計
-        total_p = total_f = total_c = total_cal = 0
-        if logs and logs.data:
-            df = pd.DataFrame(logs.data)
-            total_p = df["p_val"].sum()
-            total_f = df["f_val"].sum()
-            total_c = df["c_val"].sum()
-            total_cal = df["calories"].sum()
+    # 集計
+    total_p = total_f = total_c = total_cal = 0
+    if logs and logs.data:
+        df = pd.DataFrame(logs.data)
+        total_p = df["p_val"].sum()
+        total_f = df["f_val"].sum()
+        total_c = df["c_val"].sum()
+        total_cal = df["calories"].sum()
 
-        target_cal = profile.get("target_calories", 2000)
-        target_p = profile.get("target_p", 100)
-        target_f = profile.get("target_f", 60)
-        target_c = profile.get("target_c", 250)
+    target_cal = profile.get("target_calories", 2000)
+    target_p = profile.get("target_p", 100)
+    target_f = profile.get("target_f", 60)
+    target_c = profile.get("target_c", 250)
 
-        chart_data = {
-            "Calories": {"current": total_cal, "target": target_cal, "unit": "kcal"},
-            "Protein":  {"current": total_p,   "target": target_p,   "unit": "g"},
-            "Fat":      {"current": total_f,   "target": target_f,   "unit": "g"},
-            "Carb":     {"current": total_c,   "target": target_c,   "unit": "g"},
-        }
-        st.pyplot(create_summary_chart(chart_data))
+    chart_data = {
+        "Calories": {"current": total_cal, "target": target_cal, "unit": "kcal"},
+        "Protein":  {"current": total_p,   "target": target_p,   "unit": "g"},
+        "Fat":      {"current": total_f,   "target": target_f,   "unit": "g"},
+        "Carb":     {"current": total_c,   "target": target_c,   "unit": "g"},
+    }
+    st.pyplot(create_summary_chart(chart_data))
 
-        # アドバイス
-        st.divider()
-        st.info("💡 AIアドバイス")
-        rem_cal = target_cal - total_cal
-        if rem_cal > 0:
-            st.write(f"あと **{rem_cal} kcal** 食べられます。")
-        else:
-            st.write(f"目標カロリーを **{abs(rem_cal)} kcal** オーバーしています！")
+    # アドバイス
+    st.divider()
+    st.info("💡 AIアドバイス")
+    rem_cal = target_cal - total_cal
+    if rem_cal > 0:
+        st.write(f"あと **{rem_cal} kcal** 食べられます。")
+    else:
+        st.write(f"目標カロリーを **{abs(rem_cal)} kcal** オーバーしています！")
 
 
 # --- アプリ起動 ---
