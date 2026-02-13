@@ -246,26 +246,30 @@ def main_app():
         targets_d = json.loads(targets_json)
         return generate_meal_advice(model, profile_d, meals_d, totals_d, targets_d)
 
-    advice_text = get_advice(
-        current_date_str,
-        len(logged_meals),
-        selected_model,
-        json.dumps(profile, ensure_ascii=False, default=str),
-        json.dumps(logged_meals, ensure_ascii=False, default=str),
-        json.dumps({k: int(v) for k, v in totals.items()}),
-        json.dumps({k: int(v) for k, v in targets.items()}),
-    )
+    try:
+        advice_text = get_advice(
+            current_date_str,
+            len(logged_meals),
+            selected_model,
+            json.dumps(profile, ensure_ascii=False, default=str),
+            json.dumps(logged_meals, ensure_ascii=False, default=str),
+            json.dumps({k: int(v) for k, v in totals.items()}),
+            json.dumps({k: int(v) for k, v in targets.items()}),
+        )
+    except Exception as e:
+        advice_text = None
+        st.warning(f"⚠️ AIアドバイスを取得できませんでした: {e}")
 
     if advice_text:
         st.caption("💡 AIアドバイス")
         formatted = advice_text.replace("\n", "  \n")
         st.markdown(formatted)
-    else:
+    elif advice_text is None:
         rem_cal = target_cal - total_cal
         if rem_cal > 0:
-            st.caption(f"💡 あと **{rem_cal} kcal** 食べられます")
+            st.caption(f"💡 あと **{int(rem_cal)} kcal** 食べられます")
         else:
-            st.caption(f"⚠️ 目標カロリーを **{abs(rem_cal)} kcal** オーバーしています")
+            st.caption(f"⚠️ 目標カロリーを **{abs(int(rem_cal))} kcal** オーバーしています")
 
     # --- 履歴 ---
     MEAL_ORDER = {"朝食": 0, "昼食": 1, "夕食": 2, "間食": 3}
