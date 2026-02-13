@@ -123,7 +123,8 @@ def render_sidebar(user):
 
         with st.expander("⚙️ 設定・目標", expanded=False):
             with st.form("profile_form"):
-                decl = st.text_input("🔥 宣言", value=profile.get("declaration") or "")
+                # NOTE: 宣言機能は一時的に無効化しています。
+                # decl = st.text_input("🔥 宣言", value=profile.get("declaration") or "")
                 st.subheader("目標数値")
                 t_cal = st.number_input("目標カロリー (kcal)", value=profile.get("target_calories", 2000))
                 t_p = st.number_input("目標 P (g)", value=profile.get("target_p", 100))
@@ -136,7 +137,7 @@ def render_sidebar(user):
 
                 if st.form_submit_button("設定を保存"):
                     updates = {
-                        "declaration": decl,
+                        # "declaration": decl,
                         "target_calories": t_cal,
                         "target_p": t_p, "target_f": t_f, "target_c": t_c,
                         "likes": likes, "dislikes": dislikes, "preferences": prefs,
@@ -157,8 +158,9 @@ def main_app():
     # --- ヘッダー ---
     st.title("🍽️ AI PFC Manager")
 
-    if profile.get("declaration"):
-        st.info(f"🔥 **Goal: {profile.get('declaration')}**")
+    # NOTE: 宣言機能は一時的に無効化しています。
+    # if profile.get("declaration"):
+    #     st.info(f"🔥 **Goal: {profile.get('declaration')}**")
 
     # --- 日付ナビゲーション ---
     # query_paramsから日付を復元
@@ -270,6 +272,20 @@ def main_app():
         share_lines.append("記録なし")
     share_text = "\n".join(share_lines)
 
+    # LINEで共有
+    line_text = urllib.parse.quote(share_text)
+    st.markdown(
+        f"""
+        <a href="https://line.me/R/share?text={line_text}" target="_blank" style="
+            display:block; width:100%; padding:0.5rem; margin-bottom:0.5rem;
+            border:1px solid #06C755; border-radius:0.5rem;
+            background:#06C755; color:white; text-align:center;
+            text-decoration:none; font-size:0.9rem; box-sizing:border-box;
+        ">💬 LINEで共有</a>
+        """,
+        unsafe_allow_html=True,
+    )
+
     # クリップボードにコピー（JavaScript）
     share_text_escaped = base64.b64encode(share_text.encode()).decode()
     st.markdown(
@@ -286,20 +302,6 @@ def main_app():
             background:var(--secondary-background-color);
             color:inherit; cursor:pointer; font-size:0.9rem;
         ">📋 クリップボードにコピー</button>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # LINEで共有
-    line_text = urllib.parse.quote(share_text)
-    st.markdown(
-        f"""
-        <a href="https://line.me/R/share?text={line_text}" target="_blank" style="
-            display:block; width:100%; padding:0.5rem; margin-bottom:0.5rem;
-            border:1px solid #06C755; border-radius:0.5rem;
-            background:#06C755; color:white; text-align:center;
-            text-decoration:none; font-size:0.9rem; box-sizing:border-box;
-        ">💬 LINEで共有</a>
         """,
         unsafe_allow_html=True,
     )
