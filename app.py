@@ -308,7 +308,7 @@ def main_app():
 
     # --- AIアドバイスを後から埋め込み ---
     advice_key = f"advice_{current_date_str}_{len(logged_meals)}"
-    if advice_key not in st.session_state:
+    if advice_key not in st.session_state or st.session_state[advice_key] is None:
         with advice_placeholder.container():
             st.caption("💡 AIアドバイス")
             st.info("🏋️ アドバイスを考え中...")
