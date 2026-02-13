@@ -182,8 +182,6 @@ def main_app():
         unsafe_allow_html=True,
     )
 
-    st.divider()
-
     # --- データ取得 ---
     current_date_str = st.session_state.current_date.isoformat()
     logs = get_meal_logs(supabase, user.id, current_date_str)
@@ -204,10 +202,7 @@ def main_app():
                 time.sleep(1)
                 st.rerun()
 
-    st.divider()
-
     # --- グラフ + アドバイス ---
-    st.subheader("📊 本日の進捗")
 
     # 集計
     total_p = total_f = total_c = total_cal = 0
@@ -231,16 +226,12 @@ def main_app():
     }
     st.pyplot(create_summary_chart(chart_data))
 
-    # アドバイス
-    st.divider()
-    st.info("💡 AIアドバイス")
+    # アドバイス（グラフ直下に1行表示）
     rem_cal = target_cal - total_cal
     if rem_cal > 0:
-        st.write(f"あと **{rem_cal} kcal** 食べられます。")
+        st.caption(f"💡 あと **{rem_cal} kcal** 食べられます")
     else:
-        st.write(f"目標カロリーを **{abs(rem_cal)} kcal** オーバーしています！")
-
-    st.divider()
+        st.caption(f"⚠️ 目標カロリーを **{abs(rem_cal)} kcal** オーバーしています")
 
     # --- 履歴 ---
     st.subheader("履歴")
