@@ -250,10 +250,10 @@ def main_app():
         current_date_str,
         len(logged_meals),
         selected_model,
-        json.dumps(profile, ensure_ascii=False),
-        json.dumps(logged_meals, ensure_ascii=False),
-        json.dumps(totals),
-        json.dumps(targets),
+        json.dumps(profile, ensure_ascii=False, default=str),
+        json.dumps(logged_meals, ensure_ascii=False, default=str),
+        json.dumps({k: int(v) for k, v in totals.items()}),
+        json.dumps({k: int(v) for k, v in targets.items()}),
     )
 
     if advice_text:
