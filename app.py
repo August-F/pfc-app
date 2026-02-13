@@ -181,19 +181,6 @@ def main_app():
                 time.sleep(1)
                 st.rerun()
 
-    # --- 履歴 ---
-    st.subheader("履歴")
-    if logs and logs.data:
-        for log in logs.data:
-            with st.expander(f"{log['meal_type']}: {log['food_name'][:15]}..."):
-                st.write(f"**{log['food_name']}**")
-                st.write(f"🔥 {log['calories']}kcal | P:{log['p_val']} F:{log['f_val']} C:{log['c_val']}")
-                if st.button("削除", key=f"del_{log['id']}"):
-                    delete_meal_log(supabase, log['id'])
-                    st.rerun()
-    else:
-        st.info("まだ記録がありません")
-
     st.divider()
 
     # --- グラフ + アドバイス ---
@@ -229,6 +216,21 @@ def main_app():
         st.write(f"あと **{rem_cal} kcal** 食べられます。")
     else:
         st.write(f"目標カロリーを **{abs(rem_cal)} kcal** オーバーしています！")
+
+    st.divider()
+
+    # --- 履歴 ---
+    st.subheader("履歴")
+    if logs and logs.data:
+        for log in logs.data:
+            with st.expander(f"{log['meal_type']}: {log['food_name'][:15]}..."):
+                st.write(f"**{log['food_name']}**")
+                st.write(f"🔥 {log['calories']}kcal | P:{log['p_val']} F:{log['f_val']} C:{log['c_val']}")
+                if st.button("削除", key=f"del_{log['id']}"):
+                    delete_meal_log(supabase, log['id'])
+                    st.rerun()
+    else:
+        st.info("まだ記録がありません")
 
 
 # --- アプリ起動 ---
