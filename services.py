@@ -47,6 +47,60 @@ def analyze_meal_with_gemini(text, model_name="gemini-2.5-flash"):
         return None
 
 
+def generate_meal_advice(model_name, profile, logged_meals, totals, targets):
+    """Geminiで残りの食事アドバイスを生成"""
+    rem_cal = targets["cal"] - totals["cal"]
+    rem_p = targets["p"] - totals["p"]
+    rem_f = targets["f"] - totals["f"]
+    rem_c = targets["c"] - totals["c"]
+
+    # 記録済みのタイミングを取得
+    logged_types = set(m["meal_type"] for m in logged_meals) if logged_meals else set()
+    all_types = ["朝食", "昼食", "夕食", "間食"]
+    remaining_types = [t for t in all_types if t not in logged_types]
+
+    if not remaining_types:
+        remaining_str = "本日の食事は全て記録済みです"
+    else:
+        remaining_str = "、".join(remaining_types) + " がまだ未記録です"
+
+    likes = profile.get("likes") or "特になし"
+    dislikes = profile.get("dislikes") or "特になし"
+    prefs = profile.get("preferences") or "特になし"
+
+    try:
+        model = genai.GenerativeModel(model_name)
+        prompt = f"""あなたはフレンドリーな栄養管理アドバイザーです。
+以下の情報をもとに、残りの食事について短くアドバイスしてください。
+
+■ 残り必要量
+カロリー: {rem_cal} kcal / たんぱく質: {rem_p}g / 脂質: {rem_f}g / 炭水化物: {rem_c}g
+
+■ 食事状況
+{remaining_str}
+
+■ ユーザーの好み
+好きな食べ物: {likes}
+苦手な食べ物: {dislikes}
+その他要望: {prefs}
+
+■ 出力ルール
+- まず1行目に「あと○○kcal！（P: ○g / F: ○g / C: ○g）」と残量サマリーを書く（残りがマイナスの項目は「OK」と表記）
+- 2行目以降に、未記録の食事タイミングごとに具体的なメニューを1〜2品ずつ提案する
+- 好きな食べ物を優先し、苦手な食べ物は避ける
+- 全て記録済みの場合は、全体の振り返りコメントを一言だけ書く
+- 全体で100文字〜150文字程度に収める
+- マークダウン記法は使わない
+"""
+        res = model.generate_content(prompt)
+        return res.text.strip()
+    except Exception as e:
+        error_msg = str(e)
+        if "429" in error_msg:
+            return None
+        return None
+
+
 # --- DB操作: profiles ---
 
 def get_user_profile(supabase, user_id):
