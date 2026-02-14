@@ -39,7 +39,7 @@ def get_available_gemini_models():
     return ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
 
 
-def analyze_meal_with_gemini(text, model_name="gemini-2.5-flash"):
+def analyze_meal_with_gemini(text, model_name="gemini-2.0-flash"):
     """GeminiでPFCとカロリーを解析"""
     if len(text) < 2:
         return None
@@ -61,7 +61,10 @@ def analyze_meal_with_gemini(text, model_name="gemini-2.5-flash"):
     except Exception as e:
         error_msg = str(e)
         if "429" in error_msg:
-            st.error("⚠️ AIモデルの利用制限（アクセス集中など）により解析できませんでした。時間を置くか、別のモデルを試してください。")
+            st.error(f"⚠️ AIモデルの利用制限により解析できませんでした。（使用モデル: {model_name}）")
+            # デバッグ用：エラー詳細を折りたたみで表示
+            with st.expander("エラー詳細を見る"):
+                st.code(error_msg)
         else:
             st.error(f"⚠️ AI解析エラー: {error_msg}")
         return None
