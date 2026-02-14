@@ -235,11 +235,16 @@ def main_app():
     chart_fig = create_summary_chart(chart_data)
     st.pyplot(chart_fig)
 
-    # --- AIアドバイス ---
+    # --- PFCサマリー（常に表示） ---
     totals = {"cal": total_cal, "p": total_p, "f": total_f, "c": total_c}
     targets = {"cal": target_cal, "p": target_p, "f": target_f, "c": target_c}
     logged_meals = logs.data if logs and logs.data else []
 
+    # PFCサマリー行を表示（AIを使わない、常に表示）
+    summary_line = generate_pfc_summary(totals, targets)
+    st.markdown(summary_line)
+
+    # --- AIアドバイス ---
     # session_stateでアドバイスをキャッシュ（日付ごと）
     if "advice_cache" not in st.session_state:
         st.session_state["advice_cache"] = {}
@@ -301,24 +306,19 @@ def main_app():
             # キャッシュから取得
             advice_text = st.session_state["advice_cache"].get(cache_key)
 
-    # アドバイス表示
+    # AIアドバイス表示
+    is_cooldown = current_time < error_until
     if advice_text:
         st.caption("💡 AIアドバイス")
         formatted = advice_text.replace("\n", "  \n")
         st.markdown(formatted)
 
         # 再読み込みボタン（クールダウン中は無効化）
-        is_cooldown = current_time < error_until
         if st.button("🔄 アドバイスを再取得", disabled=is_cooldown):
             st.session_state["advice_needs_refresh"] = True
             st.rerun()
-    elif error_msg is None and current_time >= error_until:
-        # キャッシュもなくエラーでもない場合（初回アクセスでAPIを呼ばない状態）
-        # PFCサマリー行を表示（AIを使わない）
-        summary_line = generate_pfc_summary(totals, targets)
-        st.caption(f"💡 {summary_line}")
-
-        # 初回はボタンを表示してAPI呼び出しを促す
+    elif error_msg is None and not is_cooldown:
+        # AIアドバイスがまだない場合は取得ボタンを表示
         if st.button("🤖 AIアドバイスを取得"):
             st.session_state["advice_needs_refresh"] = True
             st.rerun()
