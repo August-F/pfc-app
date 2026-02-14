@@ -40,272 +40,204 @@ st.markdown("""
     }
     /* expanderの中身の余白を詰める */
     .streamlit-expanderContent {
-        padding: 0.3rem 0.5rem;
+        padding: 0.5rem !important;
     }
-    /* サイドバーの幅を狭く */
-    [data-testid="stSidebar"] {
-        min-width: 260px;
-        max-width: 260px;
-    }
-    /* タイミング選択のラジオボタンをボタン風に */
-    div[data-testid="stRadio"] > div {
-        gap: 0.3rem !important;
-        flex-wrap: nowrap !important;
-    }
-    div[data-testid="stRadio"] > div > label {
-        background: var(--secondary-background-color);
-        border-radius: 1.5rem;
-        padding: 0.25rem 0.65rem;
-        cursor: pointer;
-        border: 2px solid transparent;
-        transition: all 0.15s;
-        font-size: 0.85rem;
-        white-space: nowrap;
-    }
-    div[data-testid="stRadio"] > div > label:has(input:checked) {
-        border-color: #4CAF50;
-        background: rgba(76, 175, 80, 0.15);
-        font-weight: bold;
-    }
-    div[data-testid="stRadio"] > div > label > div:first-child {
-        display: none;  /* ラジオボタンの丸を非表示 */
+    /* 数値入力の調整 */
+    div[data-baseweb="input"] > div {
+        padding: 0.2rem;
     }
 </style>
 """, unsafe_allow_html=True)
+
+# --- 初期化 ---
 supabase = get_supabase()
 init_gemini()
 
-if "current_date" not in st.session_state:
-    st.session_state.current_date = date.today()
-
-# NOTE: ログイン無効化中のデフォルトユーザー
-#       再度ログインを有効にする場合は、この部分を削除してください。
-DEFAULT_USER_ID = "d8875444-a88a-4a31-947d-2174eefb80f0"
-DEFAULT_USER_EMAIL = "guest@example.com"
-
-class _DefaultUser:
-    """ログイン無効化時に使用するダミーユーザー"""
-    def __init__(self):
-        self.id = DEFAULT_USER_ID
-        self.email = DEFAULT_USER_EMAIL
-
+# --- セッション管理 (簡易版: 常にダミーユーザー) ---
 if "user" not in st.session_state:
-    st.session_state["user"] = _DefaultUser()
+    # 開発用ダミーユーザー
+    st.session_state["user"] = {"id": "dummy-user-id", "email": "test@example.com"}
 
+user = st.session_state["user"]
+user_id = user["id"]
 
-# --- サイドバー ---
-def render_sidebar(user):
-    """サイドバーを描画し、(選択モデル, プロフィール) を返す"""
-    with st.sidebar:
-        # NOTE: ログイン無効化中のため、ログアウトボタンを非表示にしています。
-        # st.write(f"User: {user.email}")
-        # if st.button("ログアウト"):
-        #     supabase.auth.sign_out()
-        #     st.session_state.pop("user", None)
-        #     st.session_state.pop("session", None)
-        #     st.rerun()
+# --- サイドバー設定 ---
+with st.sidebar:
+    st.title("⚙️ 設定")
+    
+    # モデル選択（キャッシュ化された関数を使用）
+    available_models = get_available_gemini_models()
+    selected_model = st.selectbox("使用AIモデル", available_models, index=0)
 
-        st.divider()
+    st.markdown("---")
+    st.subheader("👤 目標設定")
+    
+    # プロフィール取得
+    profile = get_user_profile(supabase, user_id)
+    
+    # デフォルト値
+    default_cal = profile.get("target_calories", 2000)
+    default_p = profile.get("target_p", 100)
+    default_f = profile.get("target_f", 60)
+    default_c = profile.get("target_c", 250)
 
-        # AIモデル選択
-        st.header("🤖 AIモデル設定")
-        model_options = get_available_gemini_models()
-        default_index = 0
-        for pref in ["gemini-2.5-flash", "gemini-1.5-flash"]:
-            if pref in model_options:
-                default_index = model_options.index(pref)
-                break
-        selected_model = st.selectbox("使用モデル", model_options, index=default_index)
+    with st.form("target_form"):
+        target_cal = st.number_input("目標カロリー (kcal)", value=default_cal, step=50)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            target_p = st.number_input("P (g)", value=default_p, step=5)
+        with col2:
+            target_f = st.number_input("F (g)", value=default_f, step=5)
+        with col3:
+            target_c = st.number_input("C (g)", value=default_c, step=5)
+            
+        if st.form_submit_button("保存"):
+            update_user_profile(supabase, user_id, {
+                "target_calories": target_cal,
+                "target_p": target_p,
+                "target_f": target_f,
+                "target_c": target_c
+            })
+            st.success("目標を更新しました！")
+            time.sleep(1)
+            st.rerun()
 
-        st.divider()
+# --- メイン画面 ---
+st.title("🍽️ AI PFC Manager")
 
-        # プロフィール設定
-        profile = get_user_profile(supabase, user.id)
+# 日付選択
+if "current_date" not in st.session_state:
+    st.session_state["current_date"] = date.today()
 
-        with st.expander("⚙️ 設定・目標", expanded=False):
-            with st.form("profile_form"):
-                # NOTE: 宣言機能は一時的に無効化しています。
-                # decl = st.text_input("🔥 宣言", value=profile.get("declaration") or "")
-                st.subheader("目標数値")
-                t_cal = st.number_input("目標カロリー (kcal)", value=profile.get("target_calories", 2000))
-                t_p = st.number_input("目標 P (g)", value=profile.get("target_p", 100))
-                t_f = st.number_input("目標 F (g)", value=profile.get("target_f", 60))
-                t_c = st.number_input("目標 C (g)", value=profile.get("target_c", 250))
-                st.subheader("好み・要望")
-                likes = st.text_area("好きな食べ物", value=profile.get("likes") or "")
-                dislikes = st.text_area("苦手な食べ物", value=profile.get("dislikes") or "")
-                prefs = st.text_area("その他要望", value=profile.get("preferences") or "")
+col_d1, col_d2, col_d3 = st.columns([1, 2, 1])
+with col_d1:
+    if st.button("◀ 前日"):
+        st.session_state["current_date"] -= timedelta(days=1)
+        st.rerun()
+with col_d2:
+    st.markdown(f"<h3 style='text-align: center; margin:0;'>{st.session_state['current_date']}</h3>", unsafe_allow_html=True)
+with col_d3:
+    if st.button("翌日 ▶"):
+        st.session_state["current_date"] += timedelta(days=1)
+        st.rerun()
 
-                if st.form_submit_button("設定を保存"):
-                    updates = {
-                        # "declaration": decl,
-                        "target_calories": t_cal,
-                        "target_p": t_p, "target_f": t_f, "target_c": t_c,
-                        "likes": likes, "dislikes": dislikes, "preferences": prefs,
-                    }
-                    update_user_profile(supabase, user.id, updates)
-                    st.success("保存しました")
-                    time.sleep(0.5)
-                    st.rerun()
+current_date_str = st.session_state["current_date"].isoformat()
 
-    return selected_model, profile
-
-
-# --- メインアプリ ---
-def main_app():
-    user = st.session_state["user"]
-    selected_model, profile = render_sidebar(user)
-
-    # --- ヘッダー ---
-    st.title("🍽️ AI PFC Manager")
-
-    # NOTE: 宣言機能は一時的に無効化しています。
-    # if profile.get("declaration"):
-    #     st.info(f"🔥 **Goal: {profile.get('declaration')}**")
-
-    # --- 日付ナビゲーション ---
-    # query_paramsから日付を復元
-    params = st.query_params
-    if "date" in params:
-        try:
-            st.session_state.current_date = date.fromisoformat(params["date"])
-        except ValueError:
-            pass
-
-    prev_date = (st.session_state.current_date - timedelta(days=1)).isoformat()
-    next_date = (st.session_state.current_date + timedelta(days=1)).isoformat()
-    display_date = st.session_state.current_date.strftime("%m/%d (%a)")
-
-    st.markdown(
-        f'<div style="display:flex; justify-content:center; align-items:center; '
-        f'gap:1.2rem; margin:0.5rem 0;">'
-        f'<a href="?date={prev_date}" target="_self" '
-        f'style="text-decoration:none; font-size:1.5rem;">◀</a>'
-        f'<span style="font-weight:bold; font-size:1.2rem;">{display_date}</span>'
-        f'<a href="?date={next_date}" target="_self" '
-        f'style="text-decoration:none; font-size:1.5rem;">▶</a>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-
-    # --- データ取得 ---
-    current_date_str = st.session_state.current_date.isoformat()
-    logs = get_meal_logs(supabase, user.id, current_date_str)
-
-    # --- 食事入力 ---
-    st.subheader("📝 食事を記録")
-    with st.form("meal_input"):
-        meal_type = st.radio("タイミング", ["朝食", "昼食", "夕食", "間食"], horizontal=True)
-        food_text = st.text_area("食べたもの", height=80)
-        submitted = st.form_submit_button("AI解析して記録")
-
-        if submitted:
-            result = analyze_meal_with_gemini(food_text, selected_model)
+# --- 食事記録フォーム ---
+st.subheader("📝 食事記録")
+with st.form("meal_input_form", clear_on_submit=True):
+    meal_type = st.selectbox("タイミング", ["朝食", "昼食", "夕食", "間食"], index=1)
+    meal_text = st.text_area("食事内容を入力（例: 牛丼大盛りとサラダ）", height=80)
+    
+    submitted = st.form_submit_button("AIで解析・記録 🚀")
+    
+    if submitted and meal_text:
+        with st.spinner("AIが栄養素を計算中..."):
+            result = analyze_meal_with_gemini(meal_text, selected_model)
             if result:
-                p, f, c, cal = result
-                save_meal_log(supabase, user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal)
-                st.success(f"記録しました！ {cal}kcal")
+                save_meal_log(
+                    supabase, user_id, st.session_state["current_date"],
+                    meal_type, meal_text,
+                    result["p"], result["f"], result["c"], result["cal"]
+                )
+                st.success(f"記録しました！ (Cal: {result['cal']}kcal, P: {result['p']}g, F: {result['f']}g, C: {result['c']}g)")
                 time.sleep(1)
                 st.rerun()
+            else:
+                st.error("解析に失敗しました。もう少し詳しく入力してください。")
 
-    # --- グラフ + アドバイス ---
+# --- 今日のサマリー表示 ---
+meal_logs = get_meal_logs(supabase, user_id, current_date_str)
 
-    # 集計
-    total_p = total_f = total_c = total_cal = 0
-    if logs and logs.data:
-        df = pd.DataFrame(logs.data)
-        total_p = df["p_val"].sum()
-        total_f = df["f_val"].sum()
-        total_c = df["c_val"].sum()
-        total_cal = df["calories"].sum()
+# 集計
+totals = {"calories": 0, "p_val": 0, "f_val": 0, "c_val": 0}
+for log in meal_logs:
+    totals["calories"] += log["calories"]
+    totals["p_val"] += log["p_val"]
+    totals["f_val"] += log["f_val"]
+    totals["c_val"] += log["c_val"]
 
-    target_cal = profile.get("target_calories", 2000)
-    target_p = profile.get("target_p", 100)
-    target_f = profile.get("target_f", 60)
-    target_c = profile.get("target_c", 250)
+# 目標値（サイドバーの設定値を使用）
+targets = {
+    "cal": target_cal, "p": target_p, "f": target_f, "c": target_c
+}
 
-    chart_data = {
-        "Cal": {"current": total_cal, "target": target_cal, "unit": "kcal"},
-        "P":   {"current": total_p,   "target": target_p,   "unit": "g"},
-        "F":   {"current": total_f,   "target": target_f,   "unit": "g"},
-        "C":   {"current": total_c,   "target": target_c,   "unit": "g"},
-    }
-    chart_fig = create_summary_chart(chart_data)
-    st.pyplot(chart_fig)
+st.markdown("---")
+st.subheader("📊 本日の達成状況")
 
-    # --- AIアドバイス ---
-    totals = {"cal": total_cal, "p": total_p, "f": total_f, "c": total_c}
-    targets = {"cal": target_cal, "p": target_p, "f": target_f, "c": target_c}
-    logged_meals = logs.data if logs and logs.data else []
+# グラフ用データ作成
+chart_data = {
+    'Calories': {'current': totals["calories"], 'target': targets["cal"], 'unit': 'kcal'},
+    'Protein':  {'current': totals["p_val"],    'target': targets["p"],   'unit': 'g'},
+    'Fat':      {'current': totals["f_val"],    'target': targets["f"],   'unit': 'g'},
+    'Carbs':    {'current': totals["c_val"],    'target': targets["c"],   'unit': 'g'},
+}
 
-    @st.cache_data(ttl=3600, show_spinner="🏋️ アドバイスを考え中...")
-    def get_advice(date_str, meal_count, model, profile_json, meals_json, totals_json, targets_json):
-        profile_d = json.loads(profile_json)
-        meals_d = json.loads(meals_json)
-        totals_d = json.loads(totals_json)
-        targets_d = json.loads(targets_json)
-        return generate_meal_advice(model, profile_d, meals_d, totals_d, targets_d)
+# グラフ描画
+fig = create_summary_chart(chart_data)
+st.pyplot(fig, use_container_width=True)
 
-    try:
-        advice_text = get_advice(
-            current_date_str,
-            len(logged_meals),
-            selected_model,
-            json.dumps(profile, ensure_ascii=False, default=str),
-            json.dumps(logged_meals, ensure_ascii=False, default=str),
-            json.dumps({k: int(v) for k, v in totals.items()}),
-            json.dumps({k: int(v) for k, v in targets.items()}),
-        )
-    except Exception as e:
-        advice_text = None
-        st.warning(f"⚠️ AIアドバイスを取得できませんでした: {e}")
 
-    if advice_text:
-        st.caption("💡 AIアドバイス")
-        formatted = advice_text.replace("\n", "  \n")
-        st.markdown(formatted)
-    elif advice_text is None:
-        rem_cal = target_cal - total_cal
-        if rem_cal > 0:
-            st.caption(f"💡 あと **{int(rem_cal)} kcal** 食べられます")
-        else:
-            st.caption(f"⚠️ 目標カロリーを **{abs(int(rem_cal))} kcal** オーバーしています")
-
-    # --- 履歴 ---
-    MEAL_ORDER = {"朝食": 0, "昼食": 1, "夕食": 2, "間食": 3}
-    st.subheader("履歴")
-    if logs and logs.data:
-        sorted_logs = sorted(logs.data, key=lambda x: MEAL_ORDER.get(x["meal_type"], 9))
-        for log in sorted_logs:
-            with st.expander(f"{log['meal_type']}: {log['food_name'][:15]}..."):
-                st.write(f"**{log['food_name']}**")
-                st.write(f"🔥 {log['calories']}kcal | P:{log['p_val']} F:{log['f_val']} C:{log['c_val']}")
+# --- 履歴一覧 ---
+with st.expander("📅 食事履歴を確認・削除", expanded=False):
+    if not meal_logs:
+        st.info("まだ記録がありません。")
+    else:
+        for log in meal_logs:
+            col_l1, col_l2 = st.columns([4, 1])
+            with col_l1:
+                st.markdown(f"**[{log['meal_type']}]** {log['food_name']}")
+                st.caption(f"🔥 {log['calories']}kcal | P:{log['p_val']}g F:{log['f_val']}g C:{log['c_val']}g")
+            with col_l2:
                 if st.button("削除", key=f"del_{log['id']}"):
                     delete_meal_log(supabase, log['id'])
                     st.rerun()
-    else:
-        st.info("まだ記録がありません")
 
-    # --- 共有 ---
-    st.divider()
-    st.subheader("共有")
+st.markdown("---")
 
-    # 共有テキスト生成
-    share_lines = [f"🍽️ {display_date} の食事記録"]
-    if logged_meals:
-        sorted_share = sorted(logged_meals, key=lambda x: MEAL_ORDER.get(x["meal_type"], 9))
-        for m in sorted_share:
-            share_lines.append(
-                f"・{m['meal_type']}: {m['food_name']} "
-                f"({m['calories']}kcal / P:{m['p_val']} F:{m['f_val']} C:{m['c_val']})"
+# --- AIアドバイス (修正版: ボタン式に変更) ---
+st.subheader("💡 AIトレーナーからのアドバイス")
+
+# 以前はここで自動的に generate_meal_advice を呼んでいたため、
+# 画面描画のたびにAPIを消費し、エラー時も再試行ループが発生していました。
+# ボタンを押したときだけ実行するように変更します。
+
+if st.button("AIアドバイスをもらう"):
+    with st.spinner("🏋️ AIがアドバイスを生成中..."):
+        try:
+            # キャッシュが効くので、短時間に連打してもAPI消費は1回で済みます
+            advice_text = generate_meal_advice(
+                selected_model,
+                profile,
+                meal_logs,
+                totals,
+                targets
             )
-        share_lines.append(f"\n合計: {int(total_cal)}kcal（P:{int(total_p)}g F:{int(total_f)}g C:{int(total_c)}g）")
-        share_lines.append(f"目標: {target_cal}kcal（P:{target_p}g F:{target_f}g C:{target_c}g）")
-    else:
-        share_lines.append("記録なし")
-    share_text = "\n".join(share_lines)
+            # 改行コードをマークダウン用に調整
+            formatted_advice = advice_text.replace("\n", "  \n")
+            
+            # アドバイスを表示
+            st.success("受信完了！")
+            st.markdown(formatted_advice)
+            
+        except Exception as e:
+            st.warning(f"取得できませんでした: {e}")
+else:
+    st.info("ボタンを押すと、今日の食事内容に基づいたアドバイスを表示します（API節約モード）")
 
-    # LINEで共有
+
+# --- 共有機能 ---
+with st.expander("📤 今日の結果をシェア"):
+    share_text = f"""【{current_date_str}の食事記録】
+カロリー: {totals['calories']}/{targets['cal']} kcal
+P: {totals['p_val']}/{targets['p']} g
+F: {totals['f_val']}/{targets['f']} g
+C: {totals['c_val']}/{targets['c']} g
+#AI_PFC_Manager"""
+    
+    st.text_area("コピー用テキスト", share_text, height=100)
+    
+    # LINE共有リンク
     line_text = urllib.parse.quote(share_text)
     st.markdown(
         f"""
@@ -336,16 +268,5 @@ def main_app():
             color:inherit; cursor:pointer; font-size:0.9rem;
         ">📋 クリップボードにコピー</button>
         """,
-        unsafe_allow_html=True,
+        unsafe_allow_html=True
     )
-
-
-# --- アプリ起動 ---
-# NOTE: ログイン機能は一時的に無効化しています。
-#       Streamlitの制限上アプリがpublicのため、認証処理をスキップしています。
-#       再度有効にする場合は、以下のコメントアウトを解除してください。
-# if "user" not in st.session_state:
-#     login_signup(supabase)
-# else:
-#     main_app()
-main_app()
