@@ -6,17 +6,37 @@ import json
 # --- Gemini関連 ---
 
 def get_available_gemini_models():
-    """Gemini APIから利用可能なモデル一覧を取得"""
+    """Gemini APIから利用可能なテキスト生成モデル一覧を取得"""
     try:
         models = []
         for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                models.append(m.name.replace("models/", ""))
+            model_name = m.name.replace("models/", "")
+            
+            # テキスト生成をサポートしているか確認
+            if 'generateContent' not in m.supported_generation_methods:
+                continue
+            
+            # テキスト出力モデルのみをフィルタリング
+            # - "gemini-" で始まるモデルのみ（画像生成モデル等を除外）
+            # - 埋め込みモデル（embedding）を除外
+            # - 画像生成モデル（imagen）を除外
+            # - AQAモデルを除外
+            if not model_name.startswith("gemini-"):
+                continue
+            if "embedding" in model_name.lower():
+                continue
+            if "imagen" in model_name.lower():
+                continue
+            if "aqa" in model_name.lower():
+                continue
+            
+            models.append(model_name)
+        
         if models:
             return models
     except Exception as e:
         print(f"モデル一覧取得エラー: {e}")
-    return ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"]
+    return ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
 
 
 def analyze_meal_with_gemini(text, model_name="gemini-2.5-flash"):
