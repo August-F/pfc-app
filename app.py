@@ -299,7 +299,8 @@ def main_app():
                     st.session_state["advice_needs_refresh"] = False
 
                     if "429" in error_msg:
-                        st.warning("⚠️ AIが混み合っています。しばらくしてから再度お試しください。")
+                        # RPDは太平洋時間の午前0時にリセット（日本時間17時頃）
+                        st.warning("⚠️ AIの利用制限に達しました。日本時間の17時以降に再試行してください。")
                     else:
                         st.warning("⚠️ AIアドバイスを取得できませんでした")
         elif has_cache:
