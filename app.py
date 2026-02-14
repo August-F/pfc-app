@@ -111,7 +111,7 @@ def render_sidebar(user):
         st.header("🤖 AIモデル設定")
         model_options = get_available_gemini_models()
         default_index = 0
-        for pref in ["gemini-2.5-flash", "gemini-1.5-flash"]:
+        for pref in ["gemini-2.0-flash", "gemini-1.5-flash"]:
             if pref in model_options:
                 default_index = model_options.index(pref)
                 break
@@ -238,33 +238,84 @@ def main_app():
     targets = {"cal": target_cal, "p": target_p, "f": target_f, "c": target_c}
     logged_meals = logs.data if logs and logs.data else []
 
-    @st.cache_data(ttl=3600, show_spinner="🏋️ アドバイスを考え中...")
-    def get_advice(date_str, meal_count, model, profile_json, meals_json, totals_json, targets_json):
-        profile_d = json.loads(profile_json)
-        meals_d = json.loads(meals_json)
-        totals_d = json.loads(totals_json)
-        targets_d = json.loads(targets_json)
-        return generate_meal_advice(model, profile_d, meals_d, totals_d, targets_d)
+    # 食事内容のハッシュを生成（順序に依存しないよう、ソートしてからハッシュ化）
+    def create_meals_hash(meals):
+        if not meals:
+            return "empty"
+        # 各食事を識別可能な文字列に変換してソート
+        meal_strs = sorted([
+            f"{m.get('meal_type', '')}:{m.get('food_name', '')}:{m.get('calories', 0)}"
+            for m in meals
+        ])
+        return hash(tuple(meal_strs))
 
-    try:
-        advice_text = get_advice(
-            current_date_str,
-            len(logged_meals),
-            selected_model,
-            json.dumps(profile, ensure_ascii=False, default=str),
-            json.dumps(logged_meals, ensure_ascii=False, default=str),
-            json.dumps({k: int(v) for k, v in totals.items()}),
-            json.dumps({k: int(v) for k, v in targets.items()}),
-        )
-    except Exception as e:
-        advice_text = None
-        st.warning(f"⚠️ AIアドバイスを取得できませんでした: {e}")
+    @st.cache_data(ttl=3600, show_spinner="🏋️ アドバイスを考え中...")
+    def get_advice_cached(_meals_list, date_str, meals_hash, model, totals_tuple, targets_tuple, likes, dislikes, prefs):
+        """
+        キャッシュキーを安定化（成功時のみキャッシュされる）:
+        - _meals_list: アンダースコア始まりでキャッシュキーから除外（実データ渡し用）
+        - meals_hash: 食事内容のハッシュ（順序に依存しない）
+        - totals_tuple, targets_tuple: タプルで固定
+        - likes, dislikes, prefs: プロフィールから必要な情報のみ
+        """
+        profile_d = {
+            "likes": likes,
+            "dislikes": dislikes,
+            "preferences": prefs,
+        }
+        totals_d = dict(zip(["cal", "p", "f", "c"], totals_tuple))
+        targets_d = dict(zip(["cal", "p", "f", "c"], targets_tuple))
+
+        # 例外が発生した場合はキャッシュされない（raiseするため）
+        return generate_meal_advice(model, profile_d, _meals_list, totals_d, targets_d)
+
+    # エラー抑制のための設定（session_stateで管理）
+    ADVICE_ERROR_COOLDOWN = 60  # エラー後の再試行待機時間（秒）
+    advice_error_key = "advice_error_until"
+
+    # 前回エラーからの経過時間をチェック
+    current_time = time.time()
+    error_until = st.session_state.get(advice_error_key, 0)
+
+    advice_text = None
+    error_msg = None
+
+    if current_time < error_until:
+        # まだクールダウン中
+        remaining = int(error_until - current_time)
+        st.warning(f"⚠️ AIが混み合っています。{remaining}秒後に再試行してください。")
+    else:
+        try:
+            advice_text = get_advice_cached(
+                logged_meals,
+                current_date_str,
+                create_meals_hash(logged_meals),
+                selected_model,
+                (int(totals["cal"]), int(totals["p"]), int(totals["f"]), int(totals["c"])),
+                (int(targets["cal"]), int(targets["p"]), int(targets["f"]), int(targets["c"])),
+                profile.get("likes") or "",
+                profile.get("dislikes") or "",
+                profile.get("preferences") or "",
+            )
+            # 成功したらエラー状態をクリア
+            if advice_error_key in st.session_state:
+                del st.session_state[advice_error_key]
+        except Exception as e:
+            error_msg = str(e)
+            # エラー発生時はクールダウンを設定（連続リトライを防ぐ）
+            st.session_state[advice_error_key] = current_time + ADVICE_ERROR_COOLDOWN
+
+            if "429" in error_msg:
+                st.warning("⚠️ AIが混み合っています。しばらくしてから再度お試しください。")
+            else:
+                st.warning("⚠️ AIアドバイスを取得できませんでした")
 
     if advice_text:
         st.caption("💡 AIアドバイス")
         formatted = advice_text.replace("\n", "  \n")
         st.markdown(formatted)
-    elif advice_text is None:
+    elif advice_text is None and error_msg is None and current_time >= error_until:
+        # エラーが発生していない場合のみフォールバックを表示
         rem_cal = target_cal - total_cal
         if rem_cal > 0:
             st.caption(f"💡 あと **{int(rem_cal)} kcal** 食べられます")
