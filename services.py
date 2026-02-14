@@ -61,10 +61,11 @@ def analyze_meal_with_gemini(text, model_name="gemini-2.0-flash"):
     except Exception as e:
         error_msg = str(e)
         if "429" in error_msg:
-            st.error(f"⚠️ AIモデルの利用制限により解析できませんでした。（使用モデル: {model_name}）")
-            # デバッグ用：エラー詳細を折りたたみで表示
-            with st.expander("エラー詳細を見る"):
-                st.code(error_msg)
+            # RPDは太平洋時間の午前0時にリセット（日本時間17時頃）
+            st.error(
+                f"⚠️ AIモデルの利用制限により解析できませんでした。（使用モデル: {model_name}）\n\n"
+                f"日本時間の17時以降に再試行してください。"
+            )
         else:
             st.error(f"⚠️ AI解析エラー: {error_msg}")
         return None
