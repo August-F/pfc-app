@@ -204,6 +204,8 @@ def main_app():
             if result:
                 p, f, c, cal = result
                 save_meal_log(supabase, user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal)
+                # アドバイス再取得フラグを立てる
+                st.session_state["advice_needs_refresh"] = True
                 st.success(f"記録しました！ {cal}kcal")
                 time.sleep(1)
                 st.rerun()
@@ -238,89 +240,90 @@ def main_app():
     targets = {"cal": target_cal, "p": target_p, "f": target_f, "c": target_c}
     logged_meals = logs.data if logs and logs.data else []
 
-    # 食事内容のハッシュを生成（順序に依存しないよう、ソートしてからハッシュ化）
-    def create_meals_hash(meals):
-        if not meals:
-            return "empty"
-        # 各食事を識別可能な文字列に変換してソート
-        meal_strs = sorted([
-            f"{m.get('meal_type', '')}:{m.get('food_name', '')}:{m.get('calories', 0)}"
-            for m in meals
-        ])
-        return hash(tuple(meal_strs))
+    # session_stateでアドバイスをキャッシュ（日付ごと）
+    if "advice_cache" not in st.session_state:
+        st.session_state["advice_cache"] = {}
 
-    @st.cache_data(ttl=3600, show_spinner="🏋️ アドバイスを考え中...")
-    def get_advice_cached(_meals_list, date_str, meals_hash, model, totals_tuple, targets_tuple, likes, dislikes, prefs):
-        """
-        キャッシュキーを安定化（成功時のみキャッシュされる）:
-        - _meals_list: アンダースコア始まりでキャッシュキーから除外（実データ渡し用）
-        - meals_hash: 食事内容のハッシュ（順序に依存しない）
-        - totals_tuple, targets_tuple: タプルで固定
-        - likes, dislikes, prefs: プロフィールから必要な情報のみ
-        """
-        profile_d = {
-            "likes": likes,
-            "dislikes": dislikes,
-            "preferences": prefs,
-        }
-        totals_d = dict(zip(["cal", "p", "f", "c"], totals_tuple))
-        targets_d = dict(zip(["cal", "p", "f", "c"], targets_tuple))
-
-        # 例外が発生した場合はキャッシュされない（raiseするため）
-        return generate_meal_advice(model, profile_d, _meals_list, totals_d, targets_d)
-
-    # エラー抑制のための設定（session_stateで管理）
+    # エラー抑制のための設定
     ADVICE_ERROR_COOLDOWN = 60  # エラー後の再試行待機時間（秒）
     advice_error_key = "advice_error_until"
-
-    # 前回エラーからの経過時間をチェック
     current_time = time.time()
     error_until = st.session_state.get(advice_error_key, 0)
 
+    # キャッシュキー（日付）
+    cache_key = current_date_str
+
+    # 再取得が必要かどうかを判定
+    needs_refresh = st.session_state.get("advice_needs_refresh", False)
+    has_cache = cache_key in st.session_state["advice_cache"]
+
     advice_text = None
     error_msg = None
+    is_loading = False
 
+    # クールダウン中かチェック
     if current_time < error_until:
-        # まだクールダウン中
         remaining = int(error_until - current_time)
         st.warning(f"⚠️ AIが混み合っています。{remaining}秒後に再試行してください。")
     else:
-        try:
-            advice_text = get_advice_cached(
-                logged_meals,
-                current_date_str,
-                create_meals_hash(logged_meals),
-                selected_model,
-                (int(totals["cal"]), int(totals["p"]), int(totals["f"]), int(totals["c"])),
-                (int(targets["cal"]), int(targets["p"]), int(targets["f"]), int(targets["c"])),
-                profile.get("likes") or "",
-                profile.get("dislikes") or "",
-                profile.get("preferences") or "",
-            )
-            # 成功したらエラー状態をクリア
-            if advice_error_key in st.session_state:
-                del st.session_state[advice_error_key]
-        except Exception as e:
-            error_msg = str(e)
-            # エラー発生時はクールダウンを設定（連続リトライを防ぐ）
-            st.session_state[advice_error_key] = current_time + ADVICE_ERROR_COOLDOWN
+        # APIを呼ぶ条件：再取得フラグが立っている場合のみ
+        if needs_refresh:
+            is_loading = True
+            with st.spinner("🏋️ アドバイスを考え中..."):
+                try:
+                    profile_d = {
+                        "likes": profile.get("likes") or "",
+                        "dislikes": profile.get("dislikes") or "",
+                        "preferences": profile.get("preferences") or "",
+                    }
+                    advice_text = generate_meal_advice(
+                        selected_model, profile_d, logged_meals, totals, targets
+                    )
+                    # 成功したらキャッシュに保存
+                    st.session_state["advice_cache"][cache_key] = advice_text
+                    # フラグをリセット
+                    st.session_state["advice_needs_refresh"] = False
+                    # エラー状態をクリア
+                    if advice_error_key in st.session_state:
+                        del st.session_state[advice_error_key]
+                except Exception as e:
+                    error_msg = str(e)
+                    # エラー発生時はクールダウンを設定
+                    st.session_state[advice_error_key] = current_time + ADVICE_ERROR_COOLDOWN
+                    # フラグはリセット（連続リトライ防止）
+                    st.session_state["advice_needs_refresh"] = False
 
-            if "429" in error_msg:
-                st.warning("⚠️ AIが混み合っています。しばらくしてから再度お試しください。")
-            else:
-                st.warning("⚠️ AIアドバイスを取得できませんでした")
+                    if "429" in error_msg:
+                        st.warning("⚠️ AIが混み合っています。しばらくしてから再度お試しください。")
+                    else:
+                        st.warning("⚠️ AIアドバイスを取得できませんでした")
+        elif has_cache:
+            # キャッシュから取得
+            advice_text = st.session_state["advice_cache"].get(cache_key)
 
+    # アドバイス表示
     if advice_text:
         st.caption("💡 AIアドバイス")
         formatted = advice_text.replace("\n", "  \n")
         st.markdown(formatted)
-    elif advice_text is None and error_msg is None and current_time >= error_until:
-        # エラーが発生していない場合のみフォールバックを表示
+
+        # 再読み込みボタン（クールダウン中は無効化）
+        is_cooldown = current_time < error_until
+        if st.button("🔄 アドバイスを再取得", disabled=is_cooldown):
+            st.session_state["advice_needs_refresh"] = True
+            st.rerun()
+    elif error_msg is None and current_time >= error_until:
+        # キャッシュもなくエラーでもない場合（初回アクセスでAPIを呼ばない状態）
         rem_cal = target_cal - total_cal
         if rem_cal > 0:
             st.caption(f"💡 あと **{int(rem_cal)} kcal** 食べられます")
         else:
             st.caption(f"⚠️ 目標カロリーを **{abs(int(rem_cal))} kcal** オーバーしています")
+
+        # 初回はボタンを表示してAPI呼び出しを促す
+        if st.button("🤖 AIアドバイスを取得"):
+            st.session_state["advice_needs_refresh"] = True
+            st.rerun()
 
     # --- 履歴 ---
     MEAL_ORDER = {"朝食": 0, "昼食": 1, "夕食": 2, "間食": 3}
@@ -333,6 +336,8 @@ def main_app():
                 st.write(f"🔥 {log['calories']}kcal | P:{log['p_val']} F:{log['f_val']} C:{log['c_val']}")
                 if st.button("削除", key=f"del_{log['id']}"):
                     delete_meal_log(supabase, log['id'])
+                    # アドバイス再取得フラグを立てる
+                    st.session_state["advice_needs_refresh"] = True
                     st.rerun()
     else:
         st.info("まだ記録がありません")
