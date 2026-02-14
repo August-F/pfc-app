@@ -12,7 +12,7 @@ from services import (
     get_available_gemini_models, analyze_meal_with_gemini,
     get_user_profile, update_user_profile,
     save_meal_log, get_meal_logs, delete_meal_log,
-    generate_meal_advice,
+    generate_meal_advice, generate_pfc_summary,
 )
 from charts import create_summary_chart
 
@@ -314,11 +314,9 @@ def main_app():
             st.rerun()
     elif error_msg is None and current_time >= error_until:
         # キャッシュもなくエラーでもない場合（初回アクセスでAPIを呼ばない状態）
-        rem_cal = target_cal - total_cal
-        if rem_cal > 0:
-            st.caption(f"💡 あと **{int(rem_cal)} kcal** 食べられます")
-        else:
-            st.caption(f"⚠️ 目標カロリーを **{abs(int(rem_cal))} kcal** オーバーしています")
+        # PFCサマリー行を表示（AIを使わない）
+        summary_line = generate_pfc_summary(totals, targets)
+        st.caption(f"💡 {summary_line}")
 
         # 初回はボタンを表示してAPI呼び出しを促す
         if st.button("🤖 AIアドバイスを取得"):
