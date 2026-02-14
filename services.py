@@ -47,6 +47,30 @@ def analyze_meal_with_gemini(text, model_name="gemini-2.5-flash"):
         return None
 
 
+def generate_pfc_summary(totals, targets):
+    """PFCサマリー行を生成（AIを使わない）"""
+    rem_cal = targets["cal"] - totals["cal"]
+    rem_p = targets["p"] - totals["p"]
+    rem_f = targets["f"] - totals["f"]
+    rem_c = targets["c"] - totals["c"]
+
+    # +/-表記の準備（+は超過、-は不足）
+    def fmt(val):
+        if val <= 0:
+            return f"+{abs(int(val))}"
+        else:
+            return f"-{int(val)}"
+
+    fmt_p = fmt(rem_p)
+    fmt_f = fmt(rem_f)
+    fmt_c = fmt(rem_c)
+
+    if rem_cal > 0:
+        return f"🔥 あと{int(rem_cal)}kcal！（P: {fmt_p}g / F: {fmt_f}g / C: {fmt_c}g）"
+    else:
+        return f"🔥 {abs(int(rem_cal))}kcalオーバー！（P: {fmt_p}g / F: {fmt_f}g / C: {fmt_c}g）"
+
+
 def generate_meal_advice(model_name, profile, logged_meals, totals, targets):
     """Geminiで残りの食事アドバイスを生成"""
     rem_cal = targets["cal"] - totals["cal"]
@@ -80,18 +104,15 @@ def generate_meal_advice(model_name, profile, logged_meals, totals, targets):
     # +/-表記の準備（+は超過、-は不足）
     def fmt(val):
         if val <= 0:
-            return f"+{abs(val)}"
+            return f"+{abs(int(val))}"
         else:
-            return f"-{val}"
+            return f"-{int(val)}"
     fmt_p = fmt(rem_p)
     fmt_f = fmt(rem_f)
     fmt_c = fmt(rem_c)
 
-    # サマリー行を事前生成（AIに任せない）
-    if rem_cal > 0:
-        summary_line = f"🔥 あと{rem_cal}kcal！（P: {fmt_p}g / F: {fmt_f}g / C: {fmt_c}g）"
-    else:
-        summary_line = f"🔥 {abs(rem_cal)}kcalオーバー！（P: {fmt_p}g / F: {fmt_f}g / C: {fmt_c}g）"
+    # サマリー行を生成（共通関数を利用）
+    summary_line = generate_pfc_summary(totals, targets)
 
     try:
         model = genai.GenerativeModel(model_name)
