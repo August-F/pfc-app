@@ -59,12 +59,10 @@ def analyze_meal_with_gemini(text, model_name="gemini-2.0-flash"):
         data = json.loads(json_str)
         return data.get("p", 0), data.get("f", 0), data.get("c", 0), data.get("cal", 0)
     except Exception as e:
-        # エラーの本当の理由をコンソールに出力する
-        print(f"Gemini API Error: {e}") 
+        # 画面上にデバッグ用のエラー内容を表示
+        st.error(f"Error: {type(e).__name__} - {str(e)}")
         
-        # 画面にも実際のエラー内容をそのまま表示させてみる
-        return f"⚠️ エラーが発生しました: {e}"
-        
+        return None        
 
 def generate_pfc_summary(totals, targets):
     """PFCサマリー行を生成（AIを使わない）"""
