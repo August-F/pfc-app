@@ -36,10 +36,10 @@ def get_available_gemini_models():
             return models
     except Exception as e:
         print(f"モデル一覧取得エラー: {e}")
-    return ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+    return ["gemini-2.5-pro", "gemini-3.0-pro", "gemini-2.0-flash"]
 
 
-def analyze_meal_with_gemini(text, model_name="gemini-2.0-flash"):
+def analyze_meal_with_gemini(text, model_name="gemini-2.5-pro"):
     """GeminiでPFCとカロリーを解析"""
     if len(text) < 2:
         return None
