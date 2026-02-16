@@ -59,17 +59,12 @@ def analyze_meal_with_gemini(text, model_name="gemini-2.0-flash"):
         data = json.loads(json_str)
         return data.get("p", 0), data.get("f", 0), data.get("c", 0), data.get("cal", 0)
     except Exception as e:
-        error_msg = str(e)
-        if "429" in error_msg:
-            # RPDは太平洋時間の午前0時にリセット（日本時間17時頃）
-            st.error(
-                f"⚠️ AIモデルの利用制限により解析できませんでした。（使用モデル: {model_name}）\n\n"
-                f"日本時間の17時以降に再試行してください。"
-            )
-        else:
-            st.error(f"⚠️ AI解析エラー: {error_msg}")
-        return None
-
+        # エラーの本当の理由をコンソールに出力する
+        print(f"Gemini API Error: {e}") 
+        
+        # 画面にも実際のエラー内容をそのまま表示させてみる
+        return f"⚠️ エラーが発生しました: {e}"
+        
 
 def generate_pfc_summary(totals, targets):
     """PFCサマリー行を生成（AIを使わない）"""
