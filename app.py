@@ -119,9 +119,18 @@ class _DefaultUser:
 if "user" not in st.session_state:
     st.session_state["user"] = _DefaultUser()
 
-# --- ページルーティング（Streamlit推奨方式） ---
-pg = st.navigation([
-    st.Page("pages/meal_record.py", title="食事記録", icon="🍽️", default=True),
-    st.Page("pages/dashboard.py",   title="PFCダッシュボード", icon="📊"),
-])
+# AIモデルのデフォルト値
+if "selected_model" not in st.session_state:
+    st.session_state["selected_model"] = "gemini-flash-latest"
+
+# --- ページルーティング（Streamlit推奨方式 / グループ分け） ---
+pg = st.navigation({
+    "メイン": [
+        st.Page("pages/meal_record.py", title="食事記録", icon="🍽️", default=True),
+        st.Page("pages/dashboard.py",   title="PFCダッシュボード", icon="📊"),
+    ],
+    "その他": [
+        st.Page("pages/settings.py", title="設定", icon="⚙️"),
+    ],
+})
 pg.run()
