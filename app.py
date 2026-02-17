@@ -116,8 +116,8 @@ st.markdown(f"""
         color: #111 !important;
     }}
     div[data-testid="stRadio"] > div > label:has(input:checked) {{
-        border-color: #4CAF50;
-        background: rgba(76, 175, 80, 0.2);
+        border-color: #00ACC1;
+        background: rgba(0, 172, 193, 0.2);
         font-weight: bold;
     }}
     div[data-testid="stRadio"] > div > label > div:first-child {{
@@ -233,10 +233,10 @@ def main_app():
         f'<div style="display:flex; justify-content:center; align-items:center; '
         f'gap:1.2rem; margin:0.5rem 0;">'
         f'<a href="?date={prev_date}" target="_self" '
-        f'style="text-decoration:none; font-size:1.5rem;">◀</a>'
+        f'style="text-decoration:none; font-size:1.5rem; color:#00ACC1;">◀</a>'
         f'<span style="font-weight:bold; font-size:1.2rem;">{display_date}</span>'
         f'<a href="?date={next_date}" target="_self" '
-        f'style="text-decoration:none; font-size:1.5rem;">▶</a>'
+        f'style="text-decoration:none; font-size:1.5rem; color:#00ACC1;">▶</a>'
         f'</div>',
         unsafe_allow_html=True,
     )
