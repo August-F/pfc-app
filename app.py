@@ -54,7 +54,7 @@ st.markdown(f"""
     .block-container {{
         background: rgba(240, 240, 240, 0.85);
         border-radius: 1rem;
-        padding-top: 1rem;
+        padding-top: 2.5rem;
         padding-bottom: 1rem;
         padding-left: 0.8rem;
         padding-right: 0.8rem;
@@ -210,7 +210,7 @@ def main_app():
     selected_model, profile = render_sidebar(user)
 
     # --- ヘッダー ---
-    st.title("🍽️ AI PFC Manager")
+    st.title("AI PFC Manager")
 
     # NOTE: 宣言機能は一時的に無効化しています。
     # if profile.get("declaration"):
