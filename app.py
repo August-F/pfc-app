@@ -171,6 +171,12 @@ def render_sidebar(user):
 
         st.divider()
 
+        # ページナビゲーション
+        st.header("📂 ページ")
+        st.page_link("app.py", label="🍽️ 食事記録", icon=None)
+        st.page_link("pages/dashboard.py", label="📊 PFCダッシュボード", icon=None)
+
+        st.divider()
 
         # AIモデル選択
         st.header("🤖 AIモデル設定")
