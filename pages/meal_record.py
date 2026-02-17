@@ -9,10 +9,10 @@ import base64
 import urllib.parse
 from datetime import timedelta, date
 
-from config import get_supabase, init_gemini
+from config import get_supabase
 from services import (
-    get_available_gemini_models, analyze_meal_with_advice,
-    get_user_profile, update_user_profile,
+    analyze_meal_with_advice,
+    get_user_profile,
     save_meal_log, get_meal_logs, delete_meal_log,
     generate_meal_advice, generate_pfc_summary,
 )
@@ -20,55 +20,11 @@ from charts import create_summary_chart
 
 supabase = get_supabase()
 
-
-# --- サイドバー ---
-def render_sidebar(user):
-    """サイドバーを描画し、(選択モデル, プロフィール) を返す"""
-    with st.sidebar:
-        st.divider()
-
-        # AIモデル選択
-        st.header("🤖 AIモデル設定")
-        model_options = get_available_gemini_models()
-        default_index = 0
-        for pref in ["gemini-flash-latest", "gemini-3-flash", "gemini-2.5-flash"]:
-            if pref in model_options:
-                default_index = model_options.index(pref)
-                break
-        selected_model = st.selectbox("使用モデル", model_options, index=default_index)
-
-        # プロフィール設定
-        profile = get_user_profile(supabase, user.id)
-
-        with st.expander("⚙️ 設定・目標", expanded=False):
-            with st.form("profile_form"):
-                st.subheader("目標数値")
-                t_cal = st.number_input("目標カロリー (kcal)", value=profile.get("target_calories", 2000))
-                t_p = st.number_input("目標 P (g)", value=profile.get("target_p", 100))
-                t_f = st.number_input("目標 F (g)", value=profile.get("target_f", 60))
-                t_c = st.number_input("目標 C (g)", value=profile.get("target_c", 250))
-                st.subheader("好み・要望")
-                likes = st.text_area("好きな食べ物", value=profile.get("likes") or "")
-                dislikes = st.text_area("苦手な食べ物", value=profile.get("dislikes") or "")
-                prefs = st.text_area("その他要望", value=profile.get("preferences") or "")
-
-                if st.form_submit_button("設定を保存"):
-                    updates = {
-                        "target_calories": t_cal,
-                        "target_p": t_p, "target_f": t_f, "target_c": t_c,
-                        "likes": likes, "dislikes": dislikes, "preferences": prefs,
-                    }
-                    update_user_profile(supabase, user.id, updates)
-                    st.success("保存しました")
-                    time.sleep(0.5)
-                    st.rerun()
-
-    return selected_model, profile
-
-
-# --- メイン ---
+# --- モデル・プロフィールを取得 ---
 user = st.session_state["user"]
-selected_model, profile = render_sidebar(user)
+selected_model = st.session_state.get("selected_model", "gemini-flash-latest")
+profile = get_user_profile(supabase, user.id)
+
 
 st.title("AI PFC Manager")
 
