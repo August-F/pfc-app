@@ -320,7 +320,7 @@ def main_app():
         "C":   {"current": total_c,   "target": target_c,   "unit": "g"},
     }
     chart_fig = create_summary_chart(chart_data)
-    st.pyplot(chart_fig)
+    st.plotly_chart(chart_fig, use_container_width=True, config={"staticPlot": True})
 
     # --- PFCサマリー（常に表示） ---
     totals = {"cal": total_cal, "p": total_p, "f": total_f, "c": total_c}
