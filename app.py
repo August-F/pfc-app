@@ -173,8 +173,8 @@ def render_sidebar(user):
 
         # ページナビゲーション
         st.header("📂 ページ")
-        st.page_link("app.py", label="🍽️ 食事記録", icon=None)
-        st.page_link("pages/dashboard.py", label="📊 PFCダッシュボード", icon=None)
+        if st.button("📊 PFCダッシュボード", use_container_width=True):
+            st.switch_page("pages/dashboard.py")
 
         st.divider()
 
