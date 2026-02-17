@@ -276,7 +276,7 @@ def main_app():
 
     # PFCサマリー行を表示（AIを使わない、常に表示）
     summary_line = generate_pfc_summary(totals, targets)
-    st.markdown(summary_line)
+    st.markdown(f"<p style='font-size:1.2rem; font-weight:bold; margin:0.5rem 0;'>{summary_line}</p>", unsafe_allow_html=True)
 
     # --- AIアドバイス ---
     # session_stateでアドバイスをキャッシュ（日付ごと）
@@ -344,7 +344,7 @@ def main_app():
     # AIアドバイス表示
     is_cooldown = current_time < error_until
     if advice_text:
-        st.caption("💡 AIアドバイス")
+        st.subheader("💡 AIアドバイス")
         formatted = advice_text.replace("\n", "  \n")
         st.markdown(formatted)
 
@@ -369,8 +369,6 @@ def main_app():
                 st.write(f"🔥 {log['calories']}kcal | P:{log['p_val']} F:{log['f_val']} C:{log['c_val']}")
                 if st.button("削除", key=f"del_{log['id']}"):
                     delete_meal_log(supabase, log['id'])
-                    # アドバイス再取得フラグを立てる
-                    st.session_state["advice_needs_refresh"] = True
                     st.rerun()
     else:
         st.info("まだ記録がありません")
