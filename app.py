@@ -89,6 +89,14 @@ st.markdown(f"""
     .stButton > button {{
         width: 100%;
         min-height: 2.5rem;
+        background-color: #fafdff !important;
+        color: #111 !important;
+    }}
+    /* テキスト入力ボックスの背景 */
+    .block-container textarea,
+    .block-container input {{
+        background-color: #fafdff !important;
+        color: #111 !important;
     }}
     /* expanderの中身の余白を詰める */
     .streamlit-expanderContent {{
@@ -249,7 +257,7 @@ def main_app():
     logs = get_meal_logs(supabase, user.id, current_date_str)
 
     # --- 食事入力 ---
-    st.subheader("📝 食事を記録")
+    st.subheader("食事を記録")
     with st.form("meal_input"):
         meal_type = st.radio("タイミング", ["朝食", "昼食", "夕食", "間食"], horizontal=True)
         food_text = st.text_area("食べたもの", height=80)
@@ -410,7 +418,7 @@ def main_app():
             st.rerun()
     elif error_msg is None and not is_cooldown:
         # AIアドバイスがまだない場合は取得ボタンを表示
-        if st.button("🤖 AIアドバイスを取得"):
+        if st.button("AIアドバイスを取得"):
             st.session_state["advice_needs_refresh"] = True
             st.rerun()
 
@@ -457,7 +465,7 @@ def main_app():
             border:1px solid #06C755; border-radius:0.5rem;
             background:#06C755; color:white; text-align:center;
             text-decoration:none; font-size:0.9rem; box-sizing:border-box;
-        ">💬 LINEで共有</a>
+        ">LINEで共有</a>
         """,
         unsafe_allow_html=True,
     )
@@ -470,14 +478,14 @@ def main_app():
             const text = atob('{share_text_escaped}');
             navigator.clipboard.writeText(text).then(() => {{
                 this.textContent = '✅ コピーしました！';
-                setTimeout(() => {{ this.textContent = '📋 クリップボードにコピー'; }}, 2000);
+                setTimeout(() => {{ this.textContent = 'クリップボードにコピー'; }}, 2000);
             }});
         " style="
             width:100%; padding:0.5rem; margin-bottom:0.5rem;
             border:1px solid #ccc; border-radius:0.5rem;
             background:var(--secondary-background-color);
             color:inherit; cursor:pointer; font-size:0.9rem;
-        ">📋 クリップボードにコピー</button>
+        ">クリップボードにコピー</button>
         """,
         unsafe_allow_html=True,
     )
