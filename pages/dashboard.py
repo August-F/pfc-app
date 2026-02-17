@@ -362,8 +362,15 @@ def main():
     # --- ヘッダー ---
     with st.sidebar:
         st.header("📂 ページ")
-        if st.button("🍽️ 食事記録に戻る", use_container_width=True):
-            st.switch_page("app.py")
+        st.markdown(
+            '<a href="/" target="_self" style="'
+            "display:block; width:100%; padding:0.5rem 1rem; margin-bottom:0.5rem;"
+            "border:1px solid #00ACC1; border-radius:0.5rem;"
+            "background:rgba(0,172,193,0.1); color:#00ACC1; text-align:center;"
+            'text-decoration:none; font-size:0.9rem; font-weight:600;">'
+            "🍽️ 食事記録に戻る</a>",
+            unsafe_allow_html=True,
+        )
 
     st.title("📊 PFCダッシュボード")
 
