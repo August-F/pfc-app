@@ -19,40 +19,67 @@ from charts import create_summary_chart
 # --- 初期設定 ---
 st.set_page_config(page_title="AI PFC Manager", layout="centered")
 
+# --- 背景画像の読み込み ---
+import pathlib as _pathlib
+
+def _load_bg_image():
+    """背景画像をbase64エンコードして返す"""
+    bg_path = _pathlib.Path(__file__).parent / "bg.png"
+    if bg_path.exists():
+        data = bg_path.read_bytes()
+        return base64.b64encode(data).decode()
+    return None
+
+_bg_b64 = _load_bg_image()
+_bg_css = ""
+if _bg_b64:
+    _bg_css = f"""
+    .stApp {{
+        background: linear-gradient(
+            rgba(0, 0, 0, 0.65),
+            rgba(0, 0, 0, 0.75)
+        ), url("data:image/jpeg;base64,{_bg_b64}");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }}
+    """
+
 # --- スマホ向けCSS ---
-st.markdown("""
+st.markdown(f"""
 <style>
+    {_bg_css}
     /* メインコンテンツの余白を詰める */
-    .block-container {
+    .block-container {{
         padding-top: 1rem;
         padding-bottom: 1rem;
         padding-left: 0.8rem;
         padding-right: 0.8rem;
-    }
+    }}
     /* タイトルのフォントサイズを縮小 */
-    h1 { font-size: 1.5rem !important; }
-    h2 { font-size: 1.2rem !important; }
-    h3 { font-size: 1.1rem !important; }
+    h1 {{ font-size: 1.5rem !important; }}
+    h2 {{ font-size: 1.2rem !important; }}
+    h3 {{ font-size: 1.1rem !important; }}
     /* ボタンを押しやすく */
-    .stButton > button {
+    .stButton > button {{
         width: 100%;
         min-height: 2.5rem;
-    }
+    }}
     /* expanderの中身の余白を詰める */
-    .streamlit-expanderContent {
+    .streamlit-expanderContent {{
         padding: 0.3rem 0.5rem;
-    }
+    }}
     /* サイドバーの幅を狭く */
-    [data-testid="stSidebar"] {
+    [data-testid="stSidebar"] {{
         min-width: 260px;
         max-width: 260px;
-    }
+    }}
     /* タイミング選択のラジオボタンをボタン風に */
-    div[data-testid="stRadio"] > div {
+    div[data-testid="stRadio"] > div {{
         gap: 0.3rem !important;
         flex-wrap: nowrap !important;
-    }
-    div[data-testid="stRadio"] > div > label {
+    }}
+    div[data-testid="stRadio"] > div > label {{
         background: var(--secondary-background-color);
         border-radius: 1.5rem;
         padding: 0.25rem 0.65rem;
@@ -61,15 +88,15 @@ st.markdown("""
         transition: all 0.15s;
         font-size: 0.85rem;
         white-space: nowrap;
-    }
-    div[data-testid="stRadio"] > div > label:has(input:checked) {
+    }}
+    div[data-testid="stRadio"] > div > label:has(input:checked) {{
         border-color: #4CAF50;
         background: rgba(76, 175, 80, 0.15);
         font-weight: bold;
-    }
-    div[data-testid="stRadio"] > div > label > div:first-child {
+    }}
+    div[data-testid="stRadio"] > div > label > div:first-child {{
         display: none;  /* ラジオボタンの丸を非表示 */
-    }
+    }}
 </style>
 """, unsafe_allow_html=True)
 supabase = get_supabase()
