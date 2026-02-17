@@ -9,7 +9,7 @@ from datetime import timedelta, date
 from config import get_supabase, init_gemini
 # from auth import login_signup  # NOTE: ログイン無効化中
 from services import (
-    get_available_gemini_models, analyze_meal_with_gemini,
+    get_available_gemini_models, analyze_meal_with_gemini, analyze_meal_with_advice,
     get_user_profile, update_user_profile,
     save_meal_log, get_meal_logs, delete_meal_log,
     generate_meal_advice, generate_pfc_summary,
@@ -200,12 +200,46 @@ def main_app():
         submitted = st.form_submit_button("AI解析して記録")
 
         if submitted:
-            result = analyze_meal_with_gemini(food_text, selected_model)
+            # --- 現在の集計値・目標値・プロフィールを事前に準備 ---
+            _logs = get_meal_logs(supabase, user.id, current_date_str)
+            _logged_meals = _logs.data if _logs and _logs.data else []
+            _total_p = _total_f = _total_c = _total_cal = 0
+            if _logged_meals:
+                _df = pd.DataFrame(_logged_meals)
+                _total_p = _df["p_val"].sum()
+                _total_f = _df["f_val"].sum()
+                _total_c = _df["c_val"].sum()
+                _total_cal = _df["calories"].sum()
+
+            _target_cal = profile.get("target_calories", 2000)
+            _target_p = profile.get("target_p", 100)
+            _target_f = profile.get("target_f", 60)
+            _target_c = profile.get("target_c", 250)
+            _totals = {"cal": _total_cal, "p": _total_p, "f": _total_f, "c": _total_c}
+            _targets = {"cal": _target_cal, "p": _target_p, "f": _target_f, "c": _target_c}
+            _profile_d = {
+                "likes": profile.get("likes") or "",
+                "dislikes": profile.get("dislikes") or "",
+                "preferences": profile.get("preferences") or "",
+            }
+
+            # --- PFC解析 + アドバイスを1回のAPI呼び出しで取得 ---
+            result = analyze_meal_with_advice(
+                food_text, selected_model, _profile_d,
+                _logged_meals, _totals, _targets, meal_type
+            )
             if result:
-                p, f, c, cal = result
+                p, f, c, cal, advice = result
                 save_meal_log(supabase, user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal)
-                # アドバイス再取得フラグを立てる
-                st.session_state["advice_needs_refresh"] = True
+
+                # アドバイスをキャッシュに直接保存（2回目のAPI呼び出し不要）
+                if advice:
+                    if "advice_cache" not in st.session_state:
+                        st.session_state["advice_cache"] = {}
+                    st.session_state["advice_cache"][current_date_str] = advice
+                    # refreshフラグは立てない（既にアドバイス取得済み）
+                    st.session_state["advice_needs_refresh"] = False
+
                 st.success(f"記録しました！ {cal}kcal")
                 time.sleep(1)
                 st.rerun()
