@@ -112,7 +112,7 @@ def render_sidebar(user):
         st.header("🤖 AIモデル設定")
         model_options = get_available_gemini_models()
         default_index = 0
-        for pref in ["gemini-3-flash", "gemini-2.5-flash", "gemini-3-pro"]:
+        for pref in ["gemini-flash-latest", "gemini-3-flash", "gemini-2.5-flash"]:
             if pref in model_options:
                 default_index = model_options.index(pref)
                 break
