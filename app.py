@@ -107,13 +107,16 @@ st.markdown(f"""
     div[data-testid="stRadio"] > div > label {{
         background: rgba(220, 220, 220, 0.7);
         border-radius: 1.5rem;
-        padding: 0.25rem 0.65rem;
+        padding: 0.3rem 0.65rem;
         cursor: pointer;
         border: 2px solid transparent;
         transition: all 0.15s;
         font-size: 0.85rem;
         white-space: nowrap;
         color: #111 !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }}
     div[data-testid="stRadio"] > div > label:has(input:checked) {{
         border-color: #00ACC1;
