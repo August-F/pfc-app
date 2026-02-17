@@ -26,16 +26,19 @@
 
 ```
 pfc-app/
-├── app.py              # エントリーポイント + メインUI
+├── app.py              # エントリーポイント（共通設定 + st.navigation）
+├── pages/
+│   ├── meal_record.py  # 🍽️ 食事記録ページ
+│   └── dashboard.py    # 📊 PFCダッシュボード（日次推移グラフ）
 ├── auth.py             # ログイン・新規登録画面
 ├── config.py           # Supabase・Gemini APIの初期化
 ├── services.py         # DB操作（profile / meal_logs）+ Gemini解析
 ├── charts.py           # 達成率グラフの描画
 ├── bg.png              # 背景画像
-├── requirements.txt    # Pythonパッケージ一覧
-└── pages/
-    └── dashboard.py    # 📊 PFCダッシュボード（日次推移グラフ）
+└── requirements.txt    # Pythonパッケージ一覧
 ```
+
+> ページルーティングには [Streamlit推奨の `st.navigation`](https://docs.streamlit.io/develop/concepts/multipage-apps/overview) を使用しています。
 
 
 ## セットアップ
