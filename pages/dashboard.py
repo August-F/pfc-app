@@ -360,6 +360,11 @@ def main():
     target_c = profile.get("target_c", 250)
 
     # --- ヘッダー ---
+    with st.sidebar:
+        st.header("📂 ページ")
+        if st.button("🍽️ 食事記録に戻る", use_container_width=True):
+            st.switch_page("app.py")
+
     st.title("📊 PFCダッシュボード")
 
     # --- コントロール ---
