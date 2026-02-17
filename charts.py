@@ -167,21 +167,9 @@ def create_summary_chart(data_dict):
                 x1=100,
                 y0=y_pos[i] - bar_width / 2,
                 y1=y_pos[i] + bar_width / 2,
-                line=dict(color=TEXT_COLOR, width=1.5, dash="dot"),
+                line=dict(color="#555", width=1, dash="dot"),
             ))
 
-            # 100% テキスト（区切り線の下に小さく）
-            annotations.append(dict(
-                x=100,
-                y=y_pos[i],
-                text="100%",
-                showarrow=False,
-                font=dict(size=7, color=TEXT_COLOR),
-                xanchor="center",
-                yanchor="top",
-                yshift=int(bar_width * 50 + 6),  # バー下部の少し下
-                opacity=0.5,
-            ))
 
     # ============================================================
     # 6) レイアウト
