@@ -141,25 +141,6 @@ def create_summary_chart(data_dict):
 
         # --- 超過時の装飾 ---
         if ratio > 100:
-            # 吹き出し（赤いバブル）
-            annotations.append(dict(
-                x=ratio,
-                y=y_pos[i],
-                text=f"<b>{int(ratio)}%</b>",
-                showarrow=True,
-                arrowhead=2,
-                arrowsize=1,
-                arrowwidth=1.5,
-                arrowcolor=RED,
-                font=dict(size=9, color="white"),
-                bgcolor=RED,
-                bordercolor=RED,
-                borderwidth=1,
-                borderpad=4,
-                ax=0,
-                ay=-30,
-            ))
-
             # 100%地点の区切り線
             shapes.append(dict(
                 type="line",
