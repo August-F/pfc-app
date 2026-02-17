@@ -36,8 +36,8 @@ if _bg_b64:
     _bg_css = f"""
     .stApp {{
         background: linear-gradient(
-            rgba(0, 0, 0, 0.65),
-            rgba(0, 0, 0, 0.75)
+            rgba(0, 0, 0, 0.3),
+            rgba(0, 0, 0, 0.4)
         ), url("data:image/jpeg;base64,{_bg_b64}");
         background-size: cover;
         background-position: center;
@@ -49,13 +49,38 @@ if _bg_b64:
 st.markdown(f"""
 <style>
     {_bg_css}
-    /* メインコンテンツの余白を詰める */
+
+    /* コンテンツ領域に半透明グレー背景 + 黒文字 */
     .block-container {{
+        background: rgba(240, 240, 240, 0.85);
+        border-radius: 1rem;
         padding-top: 1rem;
         padding-bottom: 1rem;
         padding-left: 0.8rem;
         padding-right: 0.8rem;
+        color: #111 !important;
     }}
+
+    /* 全テキスト要素を黒系に統一 */
+    .block-container h1,
+    .block-container h2,
+    .block-container h3,
+    .block-container p,
+    .block-container span,
+    .block-container label,
+    .block-container div,
+    .block-container li {{
+        color: #111 !important;
+    }}
+    .block-container .stMarkdown p {{
+        color: #111 !important;
+    }}
+    /* caption は少し薄めのグレー */
+    .block-container small,
+    .block-container .stCaption {{
+        color: #555 !important;
+    }}
+
     /* タイトルのフォントサイズを縮小 */
     h1 {{ font-size: 1.5rem !important; }}
     h2 {{ font-size: 1.2rem !important; }}
@@ -80,7 +105,7 @@ st.markdown(f"""
         flex-wrap: nowrap !important;
     }}
     div[data-testid="stRadio"] > div > label {{
-        background: var(--secondary-background-color);
+        background: rgba(220, 220, 220, 0.7);
         border-radius: 1.5rem;
         padding: 0.25rem 0.65rem;
         cursor: pointer;
@@ -88,10 +113,11 @@ st.markdown(f"""
         transition: all 0.15s;
         font-size: 0.85rem;
         white-space: nowrap;
+        color: #111 !important;
     }}
     div[data-testid="stRadio"] > div > label:has(input:checked) {{
         border-color: #4CAF50;
-        background: rgba(76, 175, 80, 0.15);
+        background: rgba(76, 175, 80, 0.2);
         font-weight: bold;
     }}
     div[data-testid="stRadio"] > div > label > div:first-child {{
