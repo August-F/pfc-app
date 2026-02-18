@@ -108,23 +108,41 @@ def create_pfc_chart(df, target_p=0, target_f=0):
             x=df["label"], y=df[key],
             marker_color=colors[key], name=names[key], marker_line_width=0,
         ))
-    # P平均ライン
+    # P・F平均ライン
     df_active = df[df["meal_count"] > 0]
     if len(df_active) > 0:
-        avg_p = df_active["protein"].mean()
-        fig.add_hline(
-            y=avg_p, line_dash="solid", line_color=TEAL, line_width=2,
-            annotation_text=f"P平均 {int(avg_p)}g",
-            annotation_position="top left",
-            annotation_font=dict(color=TEAL, size=10),
-        )
-        avg_f = df_active["fat"].mean()
-        fig.add_hline(
-            y=avg_f, line_dash="solid", line_color=PINK, line_width=2,
-            annotation_text=f"F平均 {int(avg_f)}g",
-            annotation_position="bottom left",
-            annotation_font=dict(color=PINK, size=10),
-        )
+        if len(df) > 14:
+            # 30日間: 7日間移動平均（記録なし日は NaN 扱い）
+            p_series = df["protein"].replace(0, float("nan")).where(df["meal_count"] > 0)
+            f_series = df["fat"].replace(0, float("nan")).where(df["meal_count"] > 0)
+            p_ma = p_series.rolling(7, min_periods=1).mean()
+            f_ma = f_series.rolling(7, min_periods=1).mean()
+            fig.add_trace(go.Scatter(
+                x=df["label"], y=p_ma,
+                mode="lines", line=dict(color=TEAL, width=2.5),
+                name="P移動平均(7日)", connectgaps=True,
+            ))
+            fig.add_trace(go.Scatter(
+                x=df["label"], y=f_ma,
+                mode="lines", line=dict(color=PINK, width=2.5),
+                name="F移動平均(7日)", connectgaps=True,
+            ))
+        else:
+            # 7・14日間: 期間全体の平均を実線
+            avg_p = df_active["protein"].mean()
+            fig.add_hline(
+                y=avg_p, line_dash="solid", line_color=TEAL, line_width=2,
+                annotation_text=f"P平均 {int(avg_p)}g",
+                annotation_position="top left",
+                annotation_font=dict(color=TEAL, size=10),
+            )
+            avg_f = df_active["fat"].mean()
+            fig.add_hline(
+                y=avg_f, line_dash="solid", line_color=PINK, line_width=2,
+                annotation_text=f"F平均 {int(avg_f)}g",
+                annotation_position="bottom left",
+                annotation_font=dict(color=PINK, size=10),
+            )
     # P目標ライン
     if target_p > 0:
         fig.add_hline(
