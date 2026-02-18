@@ -3,6 +3,7 @@
 """
 
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import time
 import base64
@@ -251,35 +252,48 @@ st.markdown(
 )
 
 share_text_escaped = base64.b64encode(share_text.encode()).decode()
-st.markdown(
+components.html(
     f"""
-    <button onclick="
+    <button id="copyBtn" onclick="
         const text = atob('{share_text_escaped}');
-        const btn = this;
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.top = '0';
-        ta.style.left = '0';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        try {{
-            document.execCommand('copy');
-            btn.textContent = '✅ コピーしました！';
-            setTimeout(() => {{ btn.textContent = 'クリップボードにコピー'; }}, 2000);
-        }} catch (e) {{
-            btn.textContent = '❌ コピー失敗';
-            setTimeout(() => {{ btn.textContent = 'クリップボードにコピー'; }}, 2000);
+        const btn = document.getElementById('copyBtn');
+        if (navigator.clipboard && window.isSecureContext) {{
+            navigator.clipboard.writeText(text).then(() => {{
+                btn.textContent = '✅ コピーしました！';
+                setTimeout(() => {{ btn.textContent = 'クリップボードにコピー'; }}, 2000);
+            }}).catch(() => {{ fallbackCopy(text, btn); }});
+        }} else {{
+            fallbackCopy(text, btn);
         }}
-        document.body.removeChild(ta);
+        function fallbackCopy(text, btn) {{
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try {{
+                document.execCommand('copy');
+                btn.textContent = '✅ コピーしました！';
+                setTimeout(() => {{ btn.textContent = 'クリップボードにコピー'; }}, 2000);
+            }} catch (e) {{
+                btn.textContent = '❌ コピー失敗';
+                setTimeout(() => {{ btn.textContent = 'クリップボードにコピー'; }}, 2000);
+            }}
+            document.body.removeChild(ta);
+        }}
     " style="
         width:100%; padding:0.5rem; margin-bottom:0.5rem;
         border:1px solid #ccc; border-radius:0.5rem;
-        background:var(--secondary-background-color);
-        color:inherit; cursor:pointer; font-size:0.9rem;
+        background:#f0f2f6; color:#31333f;
+        cursor:pointer; font-size:0.9rem; box-sizing:border-box;
     ">クリップボードにコピー</button>
+    <style>
+        @media (prefers-color-scheme: dark) {{
+            #copyBtn {{ background:#262730 !important; color:#fafafa !important; border-color:#555 !important; }}
+        }}
+    </style>
     """,
-    unsafe_allow_html=True,
+    height=50,
 )
