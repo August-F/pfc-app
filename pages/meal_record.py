@@ -23,23 +23,10 @@ supabase = get_supabase()
 # --- ページ固有の余白縮小CSS ---
 st.markdown("""
 <style>
-    /* サブヘッダーの余白縮小 */
     .block-container h2 { margin-top: 0.4rem !important; margin-bottom: 0.2rem !important; }
     .block-container h3 { margin-top: 0.3rem !important; margin-bottom: 0.1rem !important; }
-    /* divider の余白縮小 */
     .block-container hr { margin-top: 0.5rem !important; margin-bottom: 0.5rem !important; }
-    /* expander の余白縮小 */
     .streamlit-expanderHeader { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; }
-    /* ボタン右寄せ */
-    .stFormSubmitButton,
-    .stButton {
-        display: flex !important;
-        justify-content: flex-end !important;
-    }
-    .stFormSubmitButton button,
-    .stButton button {
-        width: auto !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -214,8 +201,8 @@ if advice_text:
         st.rerun()
 elif error_msg is None and not is_cooldown:
     if st.button("AIアドバイスを取得"):
-            st.session_state["advice_needs_refresh"] = True
-            st.rerun()
+        st.session_state["advice_needs_refresh"] = True
+        st.rerun()
 
 # --- 履歴 ---
 MEAL_ORDER = {"朝食": 0, "昼食": 1, "夕食": 2, "間食": 3}
