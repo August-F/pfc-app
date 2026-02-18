@@ -30,14 +30,6 @@ st.markdown("""
     .block-container hr { margin-top: 0.5rem !important; margin-bottom: 0.5rem !important; }
     /* expander の余白縮小 */
     .streamlit-expanderHeader { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; }
-    /* ボタンを右寄せ */
-    .stButton, .stFormSubmitButton {
-        display: flex;
-        justify-content: flex-end;
-    }
-    .stButton > button, .stFormSubmitButton > button {
-        width: auto !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -82,7 +74,9 @@ st.subheader("食事を記録")
 with st.form("meal_input"):
     meal_type = st.radio("タイミング", ["朝食", "昼食", "夕食", "間食"], horizontal=True)
     food_text = st.text_area("食べたもの", height=60)
-    submitted = st.form_submit_button("AI解析して記録")
+    _, btn_col = st.columns([3, 1])
+    with btn_col:
+        submitted = st.form_submit_button("AI解析して記録")
 
     if submitted:
         _logs = get_meal_logs(supabase, user.id, current_date_str)
@@ -207,13 +201,17 @@ if advice_text:
     st.subheader("💡 AIアドバイス")
     formatted = advice_text.replace("\n", "  \n")
     st.markdown(formatted)
-    if st.button("🔄 アドバイスを再取得", disabled=is_cooldown):
-        st.session_state["advice_needs_refresh"] = True
-        st.rerun()
+    _, rebtn_col = st.columns([3, 1])
+    with rebtn_col:
+        if st.button("🔄 アドバイスを再取得", disabled=is_cooldown):
+            st.session_state["advice_needs_refresh"] = True
+            st.rerun()
 elif error_msg is None and not is_cooldown:
-    if st.button("AIアドバイスを取得"):
-        st.session_state["advice_needs_refresh"] = True
-        st.rerun()
+    _, advbtn_col = st.columns([3, 1])
+    with advbtn_col:
+        if st.button("AIアドバイスを取得"):
+            st.session_state["advice_needs_refresh"] = True
+            st.rerun()
 
 # --- 履歴 ---
 MEAL_ORDER = {"朝食": 0, "昼食": 1, "夕食": 2, "間食": 3}
