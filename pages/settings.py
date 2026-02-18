@@ -22,6 +22,20 @@ profile = get_user_profile(supabase, user_id)
 
 st.title("⚙️ 設定")
 
+st.markdown("""
+<style>
+    [data-testid="stSelectbox"] div[data-baseweb="select"] > div:first-child {
+        background-color: white !important;
+        color: #31333F !important;
+    }
+    [data-testid="stFormSubmitButton"] > button {
+        background-color: white !important;
+        color: #31333F !important;
+        border-color: transparent !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # =========================================================
 # AIモデル設定
 # =========================================================
