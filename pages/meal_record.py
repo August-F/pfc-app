@@ -91,14 +91,14 @@ st.markdown(f"""
     .day-cell {{
         display:flex; flex-direction:column; align-items:center;
         padding:0.3rem 0.6rem; border-radius:0.7rem;
-        text-decoration:none; color:inherit; gap:0.1rem; min-width:2rem;
+        text-decoration:none !important; color:inherit; gap:0.1rem; min-width:2rem;
     }}
-    .day-cell--active {{ background:#dce8f5; }}
+    a.day-cell, a.day-cell:hover, a.day-cell:visited {{
+        text-decoration:none !important;
+    }}
+    .day-cell--active {{ background:color-mix(in srgb, var(--primary-color) 20%, transparent); }}
     .day-name {{ font-size:0.75rem; }}
     .day-num {{ font-size:1.05rem; font-weight:700; }}
-    @media (prefers-color-scheme: dark) {{
-        .day-cell--active {{ background:#1e3a5f; }}
-    }}
 </style>
 <div class="week-header">
     <span class="week-date-large">{display_date_large}</span>
