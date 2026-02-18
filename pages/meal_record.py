@@ -30,18 +30,13 @@ st.markdown("""
     .block-container hr { margin-top: 0.5rem !important; margin-bottom: 0.5rem !important; }
     /* expander の余白縮小 */
     .streamlit-expanderHeader { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; }
-    /* primary ボタンと form submit ボタンの見た目を統一 */
-    button[data-testid="baseButton-primary"],
-    button[data-testid="baseButton-primaryFormSubmit"] {
-        background-color: #00ACC1 !important;
-        color: #fff !important;
-        border: none !important;
-        transition: background-color 0.2s;
+    /* ボタンを右寄せ */
+    .stButton, .stFormSubmitButton {
+        display: flex;
+        justify-content: flex-end;
     }
-    button[data-testid="baseButton-primary"]:hover,
-    button[data-testid="baseButton-primaryFormSubmit"]:hover {
-        background-color: #00838F !important;
-        color: #fff !important;
+    .stButton > button, .stFormSubmitButton > button {
+        width: auto !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -212,11 +207,11 @@ if advice_text:
     st.subheader("💡 AIアドバイス")
     formatted = advice_text.replace("\n", "  \n")
     st.markdown(formatted)
-    if st.button("🔄 アドバイスを再取得", disabled=is_cooldown, type="primary"):
+    if st.button("🔄 アドバイスを再取得", disabled=is_cooldown):
         st.session_state["advice_needs_refresh"] = True
         st.rerun()
 elif error_msg is None and not is_cooldown:
-    if st.button("AIアドバイスを取得", type="primary"):
+    if st.button("AIアドバイスを取得"):
         st.session_state["advice_needs_refresh"] = True
         st.rerun()
 
