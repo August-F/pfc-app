@@ -101,13 +101,30 @@ def create_calorie_chart(df, target_cal):
 
 def create_pfc_chart(df, target_p=0, target_f=0):
     fig = go.Figure()
-    colors = {"protein": TEAL, "fat": PINK, "carb": GREY_DARK}
+    colors = {"protein": "rgba(0,172,193,0.45)", "fat": "rgba(255,82,82,0.45)", "carb": "rgba(85,85,85,0.35)"}
     names = {"protein": "タンパク質", "fat": "脂質", "carb": "炭水化物"}
     for key in ["protein", "fat", "carb"]:
         fig.add_trace(go.Bar(
             x=df["label"], y=df[key],
             marker_color=colors[key], name=names[key], marker_line_width=0,
         ))
+    # P平均ライン
+    df_active = df[df["meal_count"] > 0]
+    if len(df_active) > 0:
+        avg_p = df_active["protein"].mean()
+        fig.add_hline(
+            y=avg_p, line_dash="solid", line_color=TEAL, line_width=2,
+            annotation_text=f"P平均 {int(avg_p)}g",
+            annotation_position="top left",
+            annotation_font=dict(color=TEAL, size=10),
+        )
+        avg_f = df_active["fat"].mean()
+        fig.add_hline(
+            y=avg_f, line_dash="solid", line_color=PINK, line_width=2,
+            annotation_text=f"F平均 {int(avg_f)}g",
+            annotation_position="bottom left",
+            annotation_font=dict(color=PINK, size=10),
+        )
     # P目標ライン
     if target_p > 0:
         fig.add_hline(
