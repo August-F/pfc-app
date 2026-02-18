@@ -284,6 +284,8 @@ share_text = "\n".join(share_lines)
 
 line_text = urllib.parse.quote(share_text)
 share_text_escaped = base64.b64encode(share_text.encode()).decode()
+gemini_text = share_text + "\n\nこのあとの食事を提案してください。"
+gemini_text_escaped = base64.b64encode(gemini_text.encode()).decode()
 components.html(
     f"""
     <style>
@@ -300,6 +302,9 @@ components.html(
         .btn-copy {{
             border: 1px solid #ccc; background: #f0f2f6; color: #31333f;
         }}
+        .btn-gemini {{
+            border: 1px solid #1a73e8; background: #1a73e8; color: white;
+        }}
         @media (prefers-color-scheme: dark) {{
             .btn-copy {{ background: #262730; color: #fafafa; border-color: #555; }}
         }}
@@ -313,11 +318,11 @@ components.html(
             navigator.clipboard.writeText(text).then(() => {{
                 btn.textContent = '✅ コピーしました！';
                 setTimeout(() => {{ btn.textContent = 'クリップボードにコピー'; }}, 2000);
-            }}).catch(() => {{ fallbackCopy(text, btn); }});
+            }}).catch(() => {{ fallbackCopy(text, btn, 'クリップボードにコピー'); }});
         }} else {{
-            fallbackCopy(text, btn);
+            fallbackCopy(text, btn, 'クリップボードにコピー');
         }}
-        function fallbackCopy(text, btn) {{
+        function fallbackCopy(text, btn, label) {{
             const ta = document.createElement('textarea');
             ta.value = text;
             ta.style.position = 'fixed';
@@ -328,14 +333,48 @@ components.html(
             try {{
                 document.execCommand('copy');
                 btn.textContent = '✅ コピーしました！';
-                setTimeout(() => {{ btn.textContent = 'クリップボードにコピー'; }}, 2000);
+                setTimeout(() => {{ btn.textContent = label; }}, 2000);
             }} catch (e) {{
                 btn.textContent = '❌ コピー失敗';
-                setTimeout(() => {{ btn.textContent = 'クリップボードにコピー'; }}, 2000);
+                setTimeout(() => {{ btn.textContent = label; }}, 2000);
             }}
             document.body.removeChild(ta);
         }}
     ">クリップボードにコピー</button>
+    <button id="geminiBtn" class="btn btn-gemini" onclick="
+        const bytes = Uint8Array.from(atob('{gemini_text_escaped}'), c => c.charCodeAt(0));
+        const text = new TextDecoder().decode(bytes);
+        const btn = document.getElementById('geminiBtn');
+        const label = '✨ Geminiに相談';
+        if (navigator.clipboard && window.isSecureContext) {{
+            navigator.clipboard.writeText(text).then(() => {{
+                btn.textContent = '✅ コピーしました！貼り付けてください';
+                window.open('https://gemini.google.com/app', '_blank');
+                setTimeout(() => {{ btn.textContent = label; }}, 3000);
+            }}).catch(() => {{ fallbackGemini(text, btn, label); }});
+        }} else {{
+            fallbackGemini(text, btn, label);
+        }}
+        function fallbackGemini(text, btn, label) {{
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try {{
+                document.execCommand('copy');
+                btn.textContent = '✅ コピーしました！貼り付けてください';
+                window.open('https://gemini.google.com/app', '_blank');
+                setTimeout(() => {{ btn.textContent = label; }}, 3000);
+            }} catch (e) {{
+                btn.textContent = '❌ コピー失敗';
+                setTimeout(() => {{ btn.textContent = label; }}, 2000);
+            }}
+            document.body.removeChild(ta);
+        }}
+    ">✨ Geminiに相談</button>
     """,
-    height=85,
+    height=130,
 )
