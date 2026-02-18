@@ -47,21 +47,64 @@ if "date" in params:
     except ValueError:
         pass
 
-prev_date = (st.session_state.current_date - timedelta(days=1)).isoformat()
-next_date = (st.session_state.current_date + timedelta(days=1)).isoformat()
-display_date = st.session_state.current_date.strftime("%m/%d (%a)")
+# --- 週カレンダービュー ---
+current_date = st.session_state.current_date
+today = date.today()
 
-st.markdown(
-    f'<div style="display:flex; justify-content:center; align-items:center; '
-    f'gap:1.2rem; margin:0.2rem 0;">'
-    f'<a href="?date={prev_date}" target="_self" '
-    f'style="text-decoration:none; font-size:1.5rem; color:#00ACC1;">◀</a>'
-    f'<span style="font-weight:bold; font-size:1.2rem;">{display_date}</span>'
-    f'<a href="?date={next_date}" target="_self" '
-    f'style="text-decoration:none; font-size:1.5rem; color:#00ACC1;">▶</a>'
-    f'</div>',
-    unsafe_allow_html=True,
-)
+days_since_sunday = (current_date.weekday() + 1) % 7
+week_start = current_date - timedelta(days=days_since_sunday)
+week_days = [week_start + timedelta(days=i) for i in range(7)]
+
+display_date_large = f"{current_date.year}.{current_date.month}.{current_date.day}"
+
+DAY_NAMES = ["月", "火", "水", "木", "金", "土", "日"]
+day_cells_html = ""
+for d in week_days:
+    is_selected = (d == current_date)
+    is_sunday = (d.weekday() == 6)
+    is_today_cell = (d == today)
+    date_str = d.isoformat()
+    day_num = d.day
+    day_name = "今日" if is_today_cell else DAY_NAMES[d.weekday()]
+    name_color = "#FF3B30" if is_sunday else "inherit"
+
+    if is_selected:
+        day_cells_html += (
+            f'<div class="day-cell day-cell--active">'
+            f'<span class="day-name" style="color:{name_color};">{day_name}</span>'
+            f'<span class="day-num">{day_num}</span>'
+            f'</div>'
+        )
+    else:
+        day_cells_html += (
+            f'<a href="?date={date_str}" target="_self" class="day-cell">'
+            f'<span class="day-name" style="color:{name_color};">{day_name}</span>'
+            f'<span class="day-num">{day_num}</span>'
+            f'</a>'
+        )
+
+st.markdown(f"""
+<style>
+    .week-header {{ text-align:center; margin:0.3rem 0 0.6rem 0; }}
+    .week-date-large {{ font-size:1.8rem; font-weight:700; margin-bottom:0.6rem; display:block; }}
+    .week-strip {{ display:flex; justify-content:space-around; align-items:center; }}
+    .day-cell {{
+        display:flex; flex-direction:column; align-items:center;
+        padding:0.3rem 0.6rem; border-radius:0.7rem;
+        text-decoration:none; color:inherit; gap:0.1rem; min-width:2rem;
+    }}
+    .day-cell--active {{ background:#dce8f5; }}
+    .day-name {{ font-size:0.75rem; }}
+    .day-num {{ font-size:1.05rem; font-weight:700; }}
+    @media (prefers-color-scheme: dark) {{
+        .day-cell--active {{ background:#1e3a5f; }}
+    }}
+</style>
+<div class="week-header">
+    <span class="week-date-large">{display_date_large}</span>
+    <div class="week-strip">{day_cells_html}</div>
+</div>
+""", unsafe_allow_html=True)
 
 # --- データ取得 ---
 current_date_str = st.session_state.current_date.isoformat()
@@ -224,7 +267,7 @@ else:
 st.divider()
 st.subheader("共有")
 
-share_lines = [f"🍽️ {display_date} の食事記録"]
+share_lines = [f"🍽️ {display_date_large} の食事記録"]
 if logged_meals:
     sorted_share = sorted(logged_meals, key=lambda x: MEAL_ORDER.get(x["meal_type"], 9))
     for m in sorted_share:
