@@ -29,8 +29,8 @@ st.markdown("""
     .block-container hr { margin-top: 0.5rem !important; margin-bottom: 0.5rem !important; }
     .streamlit-expanderHeader { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; }
     [data-testid="stFormSubmitButton"] > button {
-        background-color: #31333F !important;
-        color: white !important;
+        background-color: white !important;
+        color: #31333F !important;
         border-color: transparent !important;
     }
 </style>
