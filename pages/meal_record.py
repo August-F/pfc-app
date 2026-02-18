@@ -239,23 +239,31 @@ else:
 share_text = "\n".join(share_lines)
 
 line_text = urllib.parse.quote(share_text)
-st.markdown(
-    f"""
-    <a href="https://line.me/R/share?text={line_text}" target="_blank" style="
-        display:block; width:100%; padding:0.5rem; margin-bottom:0.5rem;
-        border:1px solid #06C755; border-radius:0.5rem;
-        background:#06C755; color:white; text-align:center;
-        text-decoration:none; font-size:0.9rem; box-sizing:border-box;
-    ">LINEで共有</a>
-    """,
-    unsafe_allow_html=True,
-)
-
 share_text_escaped = base64.b64encode(share_text.encode()).decode()
 components.html(
     f"""
-    <button id="copyBtn" onclick="
-        const text = atob('{share_text_escaped}');
+    <style>
+        body {{ margin: 0; padding: 0; font-family: sans-serif; }}
+        .btn {{
+            display: block; width: 100%; padding: 0.5rem; margin-bottom: 0.5rem;
+            border-radius: 0.5rem; font-size: 0.9rem; box-sizing: border-box;
+            text-align: center; cursor: pointer; text-decoration: none;
+            font-family: sans-serif;
+        }}
+        .btn-line {{
+            border: 1px solid #06C755; background: #06C755; color: white;
+        }}
+        .btn-copy {{
+            border: 1px solid #ccc; background: #f0f2f6; color: #31333f;
+        }}
+        @media (prefers-color-scheme: dark) {{
+            .btn-copy {{ background: #262730; color: #fafafa; border-color: #555; }}
+        }}
+    </style>
+    <a href="https://line.me/R/share?text={line_text}" target="_blank" class="btn btn-line">LINEで共有</a>
+    <button id="copyBtn" class="btn btn-copy" onclick="
+        const bytes = Uint8Array.from(atob('{share_text_escaped}'), c => c.charCodeAt(0));
+        const text = new TextDecoder().decode(bytes);
         const btn = document.getElementById('copyBtn');
         if (navigator.clipboard && window.isSecureContext) {{
             navigator.clipboard.writeText(text).then(() => {{
@@ -283,17 +291,7 @@ components.html(
             }}
             document.body.removeChild(ta);
         }}
-    " style="
-        width:100%; padding:0.5rem; margin-bottom:0.5rem;
-        border:1px solid #ccc; border-radius:0.5rem;
-        background:#f0f2f6; color:#31333f;
-        cursor:pointer; font-size:0.9rem; box-sizing:border-box;
     ">クリップボードにコピー</button>
-    <style>
-        @media (prefers-color-scheme: dark) {{
-            #copyBtn {{ background:#262730 !important; color:#fafafa !important; border-color:#555 !important; }}
-        }}
-    </style>
     """,
-    height=50,
+    height=85,
 )
