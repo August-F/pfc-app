@@ -87,9 +87,10 @@ def create_calorie_chart(df, target_cal):
     fig = go.Figure()
     fig.add_trace(go.Bar(
         x=df["label"], y=df["calorie"],
-        marker_color=TEAL, name="カロリー", marker_line_width=0,
+        marker_color="rgba(0,172,193,0.45)", name="カロリー", marker_line_width=0,
     ))
-    # 30日間: 7日間移動平均
+    # カロリー平均/移動平均
+    df_active = df[df["meal_count"] > 0]
     if len(df) > 14:
         cal_series = df["calorie"].replace(0, float("nan")).where(df["meal_count"] > 0)
         cal_ma = cal_series.rolling(7, min_periods=1).mean()
@@ -98,6 +99,14 @@ def create_calorie_chart(df, target_cal):
             mode="lines", line=dict(color=TEAL, width=2.5),
             name="移動平均(7日)", connectgaps=True,
         ))
+    elif len(df_active) > 0:
+        avg_cal_val = df_active["calorie"].mean()
+        fig.add_hline(
+            y=avg_cal_val, line_dash="solid", line_color=TEAL, line_width=2,
+            annotation_text=f"平均 {int(avg_cal_val)}kcal",
+            annotation_position="top left",
+            annotation_font=dict(color=BLACK, size=10),
+        )
     fig.add_hline(
         y=target_cal, line_dash="dash", line_color=GREY_DARK,
         annotation_text=f"目標 {target_cal}kcal",
