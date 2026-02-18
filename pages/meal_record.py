@@ -255,10 +255,25 @@ st.markdown(
     f"""
     <button onclick="
         const text = atob('{share_text_escaped}');
-        navigator.clipboard.writeText(text).then(() => {{
-            this.textContent = '✅ コピーしました！';
-            setTimeout(() => {{ this.textContent = 'クリップボードにコピー'; }}, 2000);
-        }});
+        const btn = this;
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.top = '0';
+        ta.style.left = '0';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try {{
+            document.execCommand('copy');
+            btn.textContent = '✅ コピーしました！';
+            setTimeout(() => {{ btn.textContent = 'クリップボードにコピー'; }}, 2000);
+        }} catch (e) {{
+            btn.textContent = '❌ コピー失敗';
+            setTimeout(() => {{ btn.textContent = 'クリップボードにコピー'; }}, 2000);
+        }}
+        document.body.removeChild(ta);
     " style="
         width:100%; padding:0.5rem; margin-bottom:0.5rem;
         border:1px solid #ccc; border-radius:0.5rem;
