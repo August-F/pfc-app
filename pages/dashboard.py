@@ -81,7 +81,7 @@ def create_calorie_chart(df, target_cal):
     fig = go.Figure()
     fig.add_trace(go.Bar(
         x=df["label"], y=df["calorie"],
-        marker_color=PINK, name="カロリー", marker_line_width=0,
+        marker_color=TEAL, name="カロリー", marker_line_width=0,
     ))
     fig.add_hline(
         y=target_cal, line_dash="dash", line_color=RED,
@@ -206,14 +206,14 @@ avg_p = int(df_active["protein"].mean()) if days_with_data > 0 else 0
 avg_f = int(df_active["fat"].mean()) if days_with_data > 0 else 0
 avg_c = int(df_active["carb"].mean()) if days_with_data > 0 else 0
 
-st.caption(f"{days_with_data}日間のデータ · {total_meals}食記録 · 平均 {avg_cal:,} kcal/日（P:{avg_p}g F:{avg_f}g C:{avg_c}g）")
-
-# --- カロリー推移 ---
-st.subheader("🔥 日次カロリー推移")
-st.plotly_chart(create_calorie_chart(df, target_cal),
-                use_container_width=True, config={"staticPlot": True})
+st.caption(f"{days_with_data}日間のデータ · {total_meals}食記録 · 平均 {avg_cal:,} kcal/日  \n（P:{avg_p}g F:{avg_f}g C:{avg_c}g）")
 
 # --- PFC推移 ---
 st.subheader("🏋️ PFCバランス推移 (g)")
 st.plotly_chart(create_pfc_chart(df, target_p, target_f),
+                use_container_width=True, config={"staticPlot": True})
+
+# --- カロリー推移 ---
+st.subheader("🔥 日次カロリー推移")
+st.plotly_chart(create_calorie_chart(df, target_cal),
                 use_container_width=True, config={"staticPlot": True})
