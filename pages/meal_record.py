@@ -310,37 +310,6 @@ components.html(
         }}
     </style>
     <a href="https://line.me/R/share?text={line_text}" target="_blank" class="btn btn-line">LINEで共有</a>
-    <button id="copyBtn" class="btn btn-copy" onclick="
-        const bytes = Uint8Array.from(atob('{share_text_escaped}'), c => c.charCodeAt(0));
-        const text = new TextDecoder().decode(bytes);
-        const btn = document.getElementById('copyBtn');
-        if (navigator.clipboard && window.isSecureContext) {{
-            navigator.clipboard.writeText(text).then(() => {{
-                btn.textContent = '✅ コピーしました！';
-                setTimeout(() => {{ btn.textContent = 'クリップボードにコピー'; }}, 2000);
-            }}).catch(() => {{ fallbackCopy(text, btn, 'クリップボードにコピー'); }});
-        }} else {{
-            fallbackCopy(text, btn, 'クリップボードにコピー');
-        }}
-        function fallbackCopy(text, btn, label) {{
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            ta.style.position = 'fixed';
-            ta.style.opacity = '0';
-            document.body.appendChild(ta);
-            ta.focus();
-            ta.select();
-            try {{
-                document.execCommand('copy');
-                btn.textContent = '✅ コピーしました！';
-                setTimeout(() => {{ btn.textContent = label; }}, 2000);
-            }} catch (e) {{
-                btn.textContent = '❌ コピー失敗';
-                setTimeout(() => {{ btn.textContent = label; }}, 2000);
-            }}
-            document.body.removeChild(ta);
-        }}
-    ">クリップボードにコピー</button>
     <button id="geminiBtn" class="btn btn-gemini" onclick="
         const bytes = Uint8Array.from(atob('{gemini_text_escaped}'), c => c.charCodeAt(0));
         const text = new TextDecoder().decode(bytes);
@@ -375,6 +344,37 @@ components.html(
             document.body.removeChild(ta);
         }}
     ">✨ Geminiに相談</button>
+    <button id="copyBtn" class="btn btn-copy" onclick="
+        const bytes = Uint8Array.from(atob('{share_text_escaped}'), c => c.charCodeAt(0));
+        const text = new TextDecoder().decode(bytes);
+        const btn = document.getElementById('copyBtn');
+        if (navigator.clipboard && window.isSecureContext) {{
+            navigator.clipboard.writeText(text).then(() => {{
+                btn.textContent = '✅ コピーしました！';
+                setTimeout(() => {{ btn.textContent = 'クリップボードにコピー'; }}, 2000);
+            }}).catch(() => {{ fallbackCopy(text, btn, 'クリップボードにコピー'); }});
+        }} else {{
+            fallbackCopy(text, btn, 'クリップボードにコピー');
+        }}
+        function fallbackCopy(text, btn, label) {{
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try {{
+                document.execCommand('copy');
+                btn.textContent = '✅ コピーしました！';
+                setTimeout(() => {{ btn.textContent = label; }}, 2000);
+            }} catch (e) {{
+                btn.textContent = '❌ コピー失敗';
+                setTimeout(() => {{ btn.textContent = label; }}, 2000);
+            }}
+            document.body.removeChild(ta);
+        }}
+    ">クリップボードにコピー</button>
     """,
     height=130,
 )
