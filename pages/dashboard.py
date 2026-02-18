@@ -85,7 +85,7 @@ def create_calorie_chart(df, target_cal):
         annotation_font=dict(color=RED, size=11),
     )
     fig.update_layout(
-        height=300, margin=dict(l=10, r=10, t=30, b=10),
+        height=240, margin=dict(l=10, r=10, t=30, b=10),
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(tickfont=dict(size=10)),
         yaxis=dict(gridcolor="rgba(0,0,0,0.08)", tickfont=dict(size=10)),
@@ -160,9 +160,13 @@ df = aggregate_daily(logs, start, days)
 
 days_with_data = int((df["meal_count"] > 0).sum())
 total_meals = int(df["meal_count"].sum())
-avg_cal = int(df.loc[df["meal_count"] > 0, "calorie"].mean()) if days_with_data > 0 else 0
+df_active = df[df["meal_count"] > 0]
+avg_cal = int(df_active["calorie"].mean()) if days_with_data > 0 else 0
+avg_p = int(df_active["protein"].mean()) if days_with_data > 0 else 0
+avg_f = int(df_active["fat"].mean()) if days_with_data > 0 else 0
+avg_c = int(df_active["carb"].mean()) if days_with_data > 0 else 0
 
-st.caption(f"{days_with_data}日間のデータ · {total_meals}食記録 · 平均 {avg_cal:,} kcal/日")
+st.caption(f"{days_with_data}日間のデータ · {total_meals}食記録 · 平均 {avg_cal:,} kcal/日（P:{avg_p}g F:{avg_f}g C:{avg_c}g）")
 
 # --- カロリー推移 ---
 st.subheader("🔥 日次カロリー推移")
