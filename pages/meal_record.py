@@ -51,9 +51,7 @@ if "date" in params:
 current_date = st.session_state.current_date
 today = date.today()
 
-days_since_sunday = (current_date.weekday() + 1) % 7
-week_start = current_date - timedelta(days=days_since_sunday)
-week_days = [week_start + timedelta(days=i) for i in range(7)]
+week_days = [current_date + timedelta(days=i - 3) for i in range(7)]
 
 display_date_large = f"{current_date.year}.{current_date.month}.{current_date.day}"
 
