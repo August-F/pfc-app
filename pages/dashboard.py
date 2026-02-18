@@ -23,22 +23,29 @@ DEFAULT_USER_ID = "d8875444-a88a-4a31-947d-2174eefb80f0"
 
 
 # --- データ取得 ---
-@st.cache_data(ttl=120)
-def fetch_meal_logs_range(_supabase, user_id: str, start_date: str, end_date: str):
-    try:
-        res = (
-            _supabase.table("meal_logs")
-            .select("*")
-            .eq("user_id", user_id)
-            .gte("meal_date", start_date)
-            .lte("meal_date", end_date)
-            .order("meal_date", desc=False)
-            .execute()
-        )
-        return res.data if res and res.data else []
-    except Exception as e:
-        st.error(f"データ取得エラー: {e}")
-        return []
+@st.cache_data(ttl=60, show_spinner=False)
+def fetch_meal_logs_range(user_id: str, start_date: str, end_date: str):
+    """指定期間の meal_logs を取得（リトライ付き）"""
+    import time as _time
+    _supabase = get_supabase()
+    for attempt in range(3):
+        try:
+            res = (
+                _supabase.table("meal_logs")
+                .select("*")
+                .eq("user_id", user_id)
+                .gte("meal_date", start_date)
+                .lte("meal_date", end_date)
+                .order("meal_date", desc=False)
+                .execute()
+            )
+            return res.data if res and res.data else []
+        except Exception as e:
+            if attempt < 2:
+                _time.sleep(1)
+            else:
+                st.error(f"データ取得エラー: {e}")
+                return []
 
 
 def aggregate_daily(logs, start_date, days):
@@ -155,7 +162,7 @@ days = st.radio("表示期間", [7, 14, 30], index=1, horizontal=True,
 # --- データ取得 ---
 today = date.today()
 start = today - timedelta(days=days - 1)
-logs = fetch_meal_logs_range(supabase, user_id, start.isoformat(), today.isoformat())
+logs = fetch_meal_logs_range(user_id, start.isoformat(), today.isoformat())
 df = aggregate_daily(logs, start, days)
 
 days_with_data = int((df["meal_count"] > 0).sum())
