@@ -20,6 +20,19 @@ from charts import create_summary_chart
 
 supabase = get_supabase()
 
+# --- ページ固有の余白縮小CSS ---
+st.markdown("""
+<style>
+    /* サブヘッダーの余白縮小 */
+    .block-container h2 { margin-top: 0.4rem !important; margin-bottom: 0.2rem !important; }
+    .block-container h3 { margin-top: 0.3rem !important; margin-bottom: 0.1rem !important; }
+    /* divider の余白縮小 */
+    .block-container hr { margin-top: 0.5rem !important; margin-bottom: 0.5rem !important; }
+    /* expander の余白縮小 */
+    .streamlit-expanderHeader { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; }
+</style>
+""", unsafe_allow_html=True)
+
 # --- モデル・プロフィールを取得 ---
 user = st.session_state["user"]
 selected_model = st.session_state.get("selected_model", "gemini-flash-latest")
@@ -42,7 +55,7 @@ display_date = st.session_state.current_date.strftime("%m/%d (%a)")
 
 st.markdown(
     f'<div style="display:flex; justify-content:center; align-items:center; '
-    f'gap:1.2rem; margin:0.5rem 0;">'
+    f'gap:1.2rem; margin:0.2rem 0;">'
     f'<a href="?date={prev_date}" target="_self" '
     f'style="text-decoration:none; font-size:1.5rem; color:#00ACC1;">◀</a>'
     f'<span style="font-weight:bold; font-size:1.2rem;">{display_date}</span>'
@@ -60,7 +73,7 @@ logs = get_meal_logs(supabase, user.id, current_date_str)
 st.subheader("食事を記録")
 with st.form("meal_input"):
     meal_type = st.radio("タイミング", ["朝食", "昼食", "夕食", "間食"], horizontal=True)
-    food_text = st.text_area("食べたもの", height=80)
+    food_text = st.text_area("食べたもの", height=60)
     submitted = st.form_submit_button("AI解析して記録")
 
     if submitted:
@@ -133,7 +146,7 @@ targets = {"cal": target_cal, "p": target_p, "f": target_f, "c": target_c}
 logged_meals = logs.data if logs and logs.data else []
 
 summary_line = generate_pfc_summary(totals, targets)
-st.markdown(f"<p style='font-size:1.2rem; font-weight:bold; margin:0.5rem 0;'>{summary_line}</p>", unsafe_allow_html=True)
+st.markdown(f"<p style='font-size:1.1rem; font-weight:bold; margin:0.2rem 0;'>{summary_line}</p>", unsafe_allow_html=True)
 
 # --- AIアドバイス ---
 if "advice_cache" not in st.session_state:
@@ -186,11 +199,11 @@ if advice_text:
     st.subheader("💡 AIアドバイス")
     formatted = advice_text.replace("\n", "  \n")
     st.markdown(formatted)
-    if st.button("🔄 アドバイスを再取得", disabled=is_cooldown):
+    if st.button("🔄 アドバイスを再取得", disabled=is_cooldown, type="primary"):
         st.session_state["advice_needs_refresh"] = True
         st.rerun()
 elif error_msg is None and not is_cooldown:
-    if st.button("AIアドバイスを取得"):
+    if st.button("AIアドバイスを取得", type="primary"):
         st.session_state["advice_needs_refresh"] = True
         st.rerun()
 
