@@ -28,6 +28,11 @@ st.markdown("""
     .block-container h3 { margin-top: 0.3rem !important; margin-bottom: 0.1rem !important; }
     .block-container hr { margin-top: 0.5rem !important; margin-bottom: 0.5rem !important; }
     .streamlit-expanderHeader { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; }
+    [data-testid="stFormSubmitButton"] > button {
+        background-color: #31333F !important;
+        color: white !important;
+        border-color: transparent !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
