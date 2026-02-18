@@ -58,18 +58,11 @@ st.markdown(f"""
         min-height: 2.5rem;
         background-color: #fafdff !important;
         color: #111 !important;
-        border: 1px solid #ddd !important;
-    }}
-    .stFormSubmitButton > button {{
-        background-color: #fafdff !important;
-        color: #111 !important;
-        border: 1px solid #ddd !important;
     }}
     .block-container textarea,
     .block-container input {{
         background-color: #fafdff !important;
         color: #111 !important;
-        border: 1px solid #ccc !important;
     }}
     .streamlit-expanderContent {{
         padding: 0.3rem 0.5rem;
