@@ -72,27 +72,12 @@ def aggregate_daily(logs, start_date, days):
 
 
 # --- グラフ ---
-def create_calorie_chart(df, target_cal, chart_type):
+def create_calorie_chart(df, target_cal):
     fig = go.Figure()
-    if chart_type == "棒グラフ":
-        fig.add_trace(go.Bar(
-            x=df["label"], y=df["calorie"],
-            marker_color=ORANGE, name="カロリー", marker_line_width=0,
-        ))
-    elif chart_type == "エリア":
-        fig.add_trace(go.Scatter(
-            x=df["label"], y=df["calorie"],
-            fill="tozeroy", mode="lines",
-            line=dict(color=ORANGE, width=2.5),
-            fillcolor="rgba(249, 115, 22, 0.15)", name="カロリー",
-        ))
-    else:
-        fig.add_trace(go.Scatter(
-            x=df["label"], y=df["calorie"],
-            mode="lines+markers",
-            line=dict(color=ORANGE, width=2.5),
-            marker=dict(size=6, color=ORANGE), name="カロリー",
-        ))
+    fig.add_trace(go.Bar(
+        x=df["label"], y=df["calorie"],
+        marker_color=ORANGE, name="カロリー", marker_line_width=0,
+    ))
     fig.add_hline(
         y=target_cal, line_dash="dash", line_color=RED,
         annotation_text=f"目標 {target_cal}kcal",
@@ -109,29 +94,15 @@ def create_calorie_chart(df, target_cal, chart_type):
     return fig
 
 
-def create_pfc_chart(df, chart_type, target_p=0):
+def create_pfc_chart(df, target_p=0, target_f=0):
     fig = go.Figure()
     colors = {"protein": BLUE, "fat": YELLOW, "carb": GREEN}
     names = {"protein": "タンパク質", "fat": "脂質", "carb": "炭水化物"}
     for key in ["protein", "fat", "carb"]:
-        if chart_type == "棒グラフ":
-            fig.add_trace(go.Bar(
-                x=df["label"], y=df[key],
-                marker_color=colors[key], name=names[key], marker_line_width=0,
-            ))
-        elif chart_type == "エリア":
-            fig.add_trace(go.Scatter(
-                x=df["label"], y=df[key],
-                fill="tozeroy", mode="lines",
-                line=dict(color=colors[key], width=2), name=names[key],
-            ))
-        else:
-            fig.add_trace(go.Scatter(
-                x=df["label"], y=df[key],
-                mode="lines+markers",
-                line=dict(color=colors[key], width=2),
-                marker=dict(size=5), name=names[key],
-            ))
+        fig.add_trace(go.Bar(
+            x=df["label"], y=df[key],
+            marker_color=colors[key], name=names[key], marker_line_width=0,
+        ))
     # P目標ライン
     if target_p > 0:
         fig.add_hline(
@@ -140,13 +111,21 @@ def create_pfc_chart(df, chart_type, target_p=0):
             annotation_position="top right",
             annotation_font=dict(color=BLUE, size=11),
         )
+    # F目標ライン
+    if target_f > 0:
+        fig.add_hline(
+            y=target_f, line_dash="dash", line_color=YELLOW,
+            annotation_text=f"F目標 {target_f}g",
+            annotation_position="bottom right",
+            annotation_font=dict(color=YELLOW, size=11),
+        )
     fig.update_layout(
         height=300, margin=dict(l=10, r=10, t=30, b=10),
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(tickfont=dict(size=10)),
         yaxis=dict(gridcolor="rgba(0,0,0,0.08)", tickfont=dict(size=10)),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5, font=dict(size=11)),
-        barmode="group" if chart_type == "棒グラフ" else None,
+        barmode="group",
     )
     return fig
 
@@ -169,13 +148,9 @@ target_c = profile.get("target_c", 250)
 st.title("📊 PFCダッシュボード")
 
 # --- コントロール ---
-col_range, col_chart = st.columns(2)
-with col_range:
-    days = st.radio("表示期間", [7, 14, 30], index=1, horizontal=True,
-                    format_func=lambda d: f"{d}日間", key="dash_range")
-with col_chart:
-    chart_type = st.radio("グラフ形式", ["棒グラフ", "エリア", "折れ線"],
-                          horizontal=True, key="dash_chart")
+days = st.radio("表示期間", [7, 14, 30], index=1, horizontal=True,
+                format_func=lambda d: f"{d}日間", key="dash_range",
+                label_visibility="collapsed")
 
 # --- データ取得 ---
 today = date.today()
@@ -185,16 +160,16 @@ df = aggregate_daily(logs, start, days)
 
 days_with_data = int((df["meal_count"] > 0).sum())
 total_meals = int(df["meal_count"].sum())
-avg_cal = int(df["calorie"].mean()) if len(df) > 0 else 0
+avg_cal = int(df.loc[df["meal_count"] > 0, "calorie"].mean()) if days_with_data > 0 else 0
 
 st.caption(f"{days_with_data}日間のデータ · {total_meals}食記録 · 平均 {avg_cal:,} kcal/日")
 
 # --- カロリー推移 ---
 st.subheader("🔥 日次カロリー推移")
-st.plotly_chart(create_calorie_chart(df, target_cal, chart_type),
+st.plotly_chart(create_calorie_chart(df, target_cal),
                 use_container_width=True, config={"staticPlot": True})
 
 # --- PFC推移 ---
 st.subheader("🏋️ PFCバランス推移 (g)")
-st.plotly_chart(create_pfc_chart(df, chart_type, target_p),
+st.plotly_chart(create_pfc_chart(df, target_p, target_f),
                 use_container_width=True, config={"staticPlot": True})
