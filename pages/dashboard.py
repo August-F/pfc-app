@@ -76,6 +76,12 @@ def aggregate_daily(logs, start_date, days):
     return pd.DataFrame(rows)
 
 
+# --- 共通軸スタイル ---
+AXIS_FONT = dict(size=10, color="#111")
+GRID_COLOR = "rgba(0,0,0,0.08)"
+BLACK = "#111"
+
+
 # --- グラフ ---
 def create_calorie_chart(df, target_cal):
     fig = go.Figure()
@@ -83,18 +89,28 @@ def create_calorie_chart(df, target_cal):
         x=df["label"], y=df["calorie"],
         marker_color=TEAL, name="カロリー", marker_line_width=0,
     ))
+    # 30日間: 7日間移動平均
+    if len(df) > 14:
+        cal_series = df["calorie"].replace(0, float("nan")).where(df["meal_count"] > 0)
+        cal_ma = cal_series.rolling(7, min_periods=1).mean()
+        fig.add_trace(go.Scatter(
+            x=df["label"], y=cal_ma,
+            mode="lines", line=dict(color=TEAL, width=2.5),
+            name="移動平均(7日)", connectgaps=True,
+        ))
     fig.add_hline(
         y=target_cal, line_dash="dash", line_color=RED,
         annotation_text=f"目標 {target_cal}kcal",
         annotation_position="top right",
-        annotation_font=dict(color=RED, size=11),
+        annotation_font=dict(color=BLACK, size=11),
     )
     fig.update_layout(
         height=240, margin=dict(l=10, r=10, t=30, b=10),
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(tickfont=dict(size=10)),
-        yaxis=dict(gridcolor="rgba(0,0,0,0.08)", tickfont=dict(size=10)),
-        showlegend=False,
+        xaxis=dict(tickfont=AXIS_FONT),
+        yaxis=dict(gridcolor=GRID_COLOR, tickfont=AXIS_FONT),
+        showlegend=len(df) > 14,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5, font=dict(size=11, color=BLACK)),
     )
     return fig
 
@@ -134,14 +150,14 @@ def create_pfc_chart(df, target_p=0, target_f=0):
                 y=avg_p, line_dash="solid", line_color=TEAL, line_width=2,
                 annotation_text=f"P平均 {int(avg_p)}g",
                 annotation_position="top left",
-                annotation_font=dict(color=TEAL, size=10),
+                annotation_font=dict(color=BLACK, size=10),
             )
             avg_f = df_active["fat"].mean()
             fig.add_hline(
                 y=avg_f, line_dash="solid", line_color=PINK, line_width=2,
                 annotation_text=f"F平均 {int(avg_f)}g",
                 annotation_position="bottom left",
-                annotation_font=dict(color=PINK, size=10),
+                annotation_font=dict(color=BLACK, size=10),
             )
     # P目標ライン
     if target_p > 0:
@@ -149,7 +165,7 @@ def create_pfc_chart(df, target_p=0, target_f=0):
             y=target_p, line_dash="dash", line_color=TEAL,
             annotation_text=f"P目標 {target_p}g",
             annotation_position="top right",
-            annotation_font=dict(color=TEAL, size=11),
+            annotation_font=dict(color=BLACK, size=11),
         )
     # F目標ライン
     if target_f > 0:
@@ -157,14 +173,14 @@ def create_pfc_chart(df, target_p=0, target_f=0):
             y=target_f, line_dash="dash", line_color=PINK,
             annotation_text=f"F目標 {target_f}g",
             annotation_position="bottom right",
-            annotation_font=dict(color=PINK, size=11),
+            annotation_font=dict(color=BLACK, size=11),
         )
     fig.update_layout(
         height=300, margin=dict(l=10, r=10, t=30, b=10),
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(tickfont=dict(size=10)),
-        yaxis=dict(gridcolor="rgba(0,0,0,0.08)", tickfont=dict(size=10)),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5, font=dict(size=11)),
+        xaxis=dict(tickfont=AXIS_FONT),
+        yaxis=dict(gridcolor=GRID_COLOR, tickfont=AXIS_FONT),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5, font=dict(size=11, color=BLACK)),
         barmode="group",
     )
     return fig
