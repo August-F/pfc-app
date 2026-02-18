@@ -30,13 +30,14 @@ st.markdown("""
     .block-container hr { margin-top: 0.5rem !important; margin-bottom: 0.5rem !important; }
     /* expander の余白縮小 */
     .streamlit-expanderHeader { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; }
-    /* ボタン右寄せ（form submit + 通常ボタン） */
-    div[data-testid="stFormSubmitButton"],
-    div[data-testid="stButton"] {
-        text-align: right !important;
+    /* ボタン右寄せ */
+    .stFormSubmitButton,
+    .stButton {
+        display: flex !important;
+        justify-content: flex-end !important;
     }
-    div[data-testid="stFormSubmitButton"] > button,
-    div[data-testid="stButton"] > button {
+    .stFormSubmitButton button,
+    .stButton button {
         width: auto !important;
     }
 </style>
