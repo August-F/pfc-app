@@ -60,8 +60,7 @@ st.markdown(f"""
         color: #111 !important;
         border: 1px solid #ddd !important;
     }}
-    .stFormSubmitButton > button,
-    div[data-testid="stFormSubmitButton"] > button {{
+    .stFormSubmitButton > button {{
         background-color: #fafdff !important;
         color: #111 !important;
         border: 1px solid #ddd !important;
@@ -71,12 +70,6 @@ st.markdown(f"""
         background-color: #fafdff !important;
         color: #111 !important;
         border: 1px solid #ccc !important;
-    }}
-    .block-container [data-baseweb="select"] {{
-        background-color: #fafdff !important;
-    }}
-    .block-container [data-baseweb="select"] * {{
-        color: #111 !important;
     }}
     .streamlit-expanderContent {{
         padding: 0.3rem 0.5rem;
