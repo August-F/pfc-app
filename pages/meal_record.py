@@ -201,13 +201,13 @@ if advice_text:
     st.subheader("💡 AIアドバイス")
     formatted = advice_text.replace("\n", "  \n")
     st.markdown(formatted)
-    _, rebtn_col = st.columns([3, 1])
+    _, rebtn_col = st.columns([2.8, 1.2])
     with rebtn_col:
         if st.button("🔄 アドバイスを再取得", disabled=is_cooldown):
             st.session_state["advice_needs_refresh"] = True
             st.rerun()
 elif error_msg is None and not is_cooldown:
-    _, advbtn_col = st.columns([3, 1])
+    _, advbtn_col = st.columns([2.8, 1.2])
     with advbtn_col:
         if st.button("AIアドバイスを取得"):
             st.session_state["advice_needs_refresh"] = True
