@@ -14,10 +14,8 @@ supabase = get_supabase()
 
 # --- 定数 ---
 TEAL = "#00ACC1"
-ORANGE = "#F97316"
-BLUE = "#3B82F6"
-YELLOW = "#EAB308"
-GREEN = "#22C55E"
+PINK = "#FF5252"
+GREY_DARK = "#555555"
 RED = "#FF5252"
 DEFAULT_USER_ID = "d8875444-a88a-4a31-947d-2174eefb80f0"
 
@@ -83,7 +81,7 @@ def create_calorie_chart(df, target_cal):
     fig = go.Figure()
     fig.add_trace(go.Bar(
         x=df["label"], y=df["calorie"],
-        marker_color=ORANGE, name="カロリー", marker_line_width=0,
+        marker_color=PINK, name="カロリー", marker_line_width=0,
     ))
     fig.add_hline(
         y=target_cal, line_dash="dash", line_color=RED,
@@ -103,7 +101,7 @@ def create_calorie_chart(df, target_cal):
 
 def create_pfc_chart(df, target_p=0, target_f=0):
     fig = go.Figure()
-    colors = {"protein": BLUE, "fat": YELLOW, "carb": GREEN}
+    colors = {"protein": TEAL, "fat": PINK, "carb": GREY_DARK}
     names = {"protein": "タンパク質", "fat": "脂質", "carb": "炭水化物"}
     for key in ["protein", "fat", "carb"]:
         fig.add_trace(go.Bar(
@@ -113,18 +111,18 @@ def create_pfc_chart(df, target_p=0, target_f=0):
     # P目標ライン
     if target_p > 0:
         fig.add_hline(
-            y=target_p, line_dash="dash", line_color=BLUE,
+            y=target_p, line_dash="dash", line_color=TEAL,
             annotation_text=f"P目標 {target_p}g",
             annotation_position="top right",
-            annotation_font=dict(color=BLUE, size=11),
+            annotation_font=dict(color=TEAL, size=11),
         )
     # F目標ライン
     if target_f > 0:
         fig.add_hline(
-            y=target_f, line_dash="dash", line_color=YELLOW,
+            y=target_f, line_dash="dash", line_color=PINK,
             annotation_text=f"F目標 {target_f}g",
             annotation_position="bottom right",
-            annotation_font=dict(color=YELLOW, size=11),
+            annotation_font=dict(color=PINK, size=11),
         )
     fig.update_layout(
         height=300, margin=dict(l=10, r=10, t=30, b=10),
