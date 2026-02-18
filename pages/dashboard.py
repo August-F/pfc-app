@@ -99,13 +99,13 @@ def create_calorie_chart(df, target_cal):
             name="移動平均(7日)", connectgaps=True,
         ))
     fig.add_hline(
-        y=target_cal, line_dash="dash", line_color=RED,
+        y=target_cal, line_dash="dash", line_color=GREY_DARK,
         annotation_text=f"目標 {target_cal}kcal",
         annotation_position="top right",
         annotation_font=dict(color=BLACK, size=11),
     )
     fig.update_layout(
-        height=240, margin=dict(l=10, r=10, t=30, b=10),
+        height=200, margin=dict(l=10, r=10, t=30, b=10),
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(tickfont=AXIS_FONT),
         yaxis=dict(gridcolor=GRID_COLOR, tickfont=AXIS_FONT),
@@ -162,7 +162,7 @@ def create_pfc_chart(df, target_p=0, target_f=0):
     # P目標ライン
     if target_p > 0:
         fig.add_hline(
-            y=target_p, line_dash="dash", line_color=TEAL,
+            y=target_p, line_dash="dash", line_color=GREY_DARK,
             annotation_text=f"P目標 {target_p}g",
             annotation_position="top right",
             annotation_font=dict(color=BLACK, size=11),
@@ -170,13 +170,13 @@ def create_pfc_chart(df, target_p=0, target_f=0):
     # F目標ライン
     if target_f > 0:
         fig.add_hline(
-            y=target_f, line_dash="dash", line_color=PINK,
+            y=target_f, line_dash="dash", line_color=GREY_DARK,
             annotation_text=f"F目標 {target_f}g",
             annotation_position="bottom right",
             annotation_font=dict(color=BLACK, size=11),
         )
     fig.update_layout(
-        height=300, margin=dict(l=10, r=10, t=30, b=10),
+        height=260, margin=dict(l=10, r=10, t=30, b=10),
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(tickfont=AXIS_FONT),
         yaxis=dict(gridcolor=GRID_COLOR, tickfont=AXIS_FONT),
@@ -204,7 +204,7 @@ target_c = profile.get("target_c", 250)
 st.title("📊 PFCダッシュボード")
 
 # --- コントロール ---
-days = st.radio("表示期間", [7, 14, 30], index=1, horizontal=True,
+days = st.radio("表示期間", [7, 14, 30], index=0, horizontal=True,
                 format_func=lambda d: f"{d}日間", key="dash_range",
                 label_visibility="collapsed")
 
