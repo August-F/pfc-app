@@ -96,9 +96,12 @@ st.markdown(f"""
     a.day-cell, a.day-cell:hover, a.day-cell:visited {{
         text-decoration:none !important;
     }}
-    .day-cell--active {{ background:color-mix(in srgb, var(--primary-color) 20%, transparent); }}
+    .day-cell--active {{ background:rgba(0,172,193,0.18); }}
     .day-name {{ font-size:0.75rem; }}
     .day-num {{ font-size:1.05rem; font-weight:700; }}
+    @media (prefers-color-scheme: dark) {{
+        .day-cell--active {{ background:rgba(0,172,193,0.28); }}
+    }}
 </style>
 <div class="week-header">
     <span class="week-date-large">{display_date_large}</span>
