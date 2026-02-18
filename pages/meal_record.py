@@ -30,6 +30,19 @@ st.markdown("""
     .block-container hr { margin-top: 0.5rem !important; margin-bottom: 0.5rem !important; }
     /* expander の余白縮小 */
     .streamlit-expanderHeader { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; }
+    /* primary ボタンと form submit ボタンの見た目を統一 */
+    button[data-testid="baseButton-primary"],
+    button[data-testid="baseButton-primaryFormSubmit"] {
+        background-color: #00ACC1 !important;
+        color: #fff !important;
+        border: none !important;
+        transition: background-color 0.2s;
+    }
+    button[data-testid="baseButton-primary"]:hover,
+    button[data-testid="baseButton-primaryFormSubmit"]:hover {
+        background-color: #00838F !important;
+        color: #fff !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
