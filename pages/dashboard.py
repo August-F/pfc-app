@@ -104,7 +104,7 @@ def create_calorie_chart(df, target_cal):
         fig.add_hline(
             y=avg_cal_val, line_dash="solid", line_color=TEAL, line_width=2,
             annotation_text=f"平均 {int(avg_cal_val)}kcal",
-            annotation_position="top left",
+            annotation_position="top right",
             annotation_font=dict(color=BLACK, size=10),
         )
     fig.add_hrect(y0=0, y1=target_cal,
@@ -113,7 +113,7 @@ def create_calorie_chart(df, target_cal):
         y=target_cal, line_dash="solid",
         line_color="rgba(0,172,193,0.5)", line_width=1,
         annotation_text=f"目標 {target_cal}kcal",
-        annotation_position="top right",
+        annotation_position="top left",
         annotation_font=dict(color=BLACK, size=11),
     )
     fig.update_layout(
@@ -161,14 +161,14 @@ def create_pfc_chart(df, target_p=0, target_f=0):
             fig.add_hline(
                 y=avg_p, line_dash="solid", line_color=TEAL, line_width=2,
                 annotation_text=f"P平均 {int(avg_p)}g",
-                annotation_position="top left",
+                annotation_position="top right",
                 annotation_font=dict(color=BLACK, size=10),
             )
             avg_f = df_active["fat"].mean()
             fig.add_hline(
                 y=avg_f, line_dash="solid", line_color=PINK, line_width=2,
                 annotation_text=f"F平均 {int(avg_f)}g",
-                annotation_position="bottom left",
+                annotation_position="bottom right",
                 annotation_font=dict(color=BLACK, size=10),
             )
     # P目標（塗りつぶし + 境界線）
@@ -179,7 +179,7 @@ def create_pfc_chart(df, target_p=0, target_f=0):
             y=target_p, line_dash="solid",
             line_color="rgba(0,172,193,0.5)", line_width=1,
             annotation_text=f"P目標 {target_p}g",
-            annotation_position="top right",
+            annotation_position="top left",
             annotation_font=dict(color=BLACK, size=11),
         )
     # F目標（塗りつぶし + 境界線）
@@ -190,7 +190,7 @@ def create_pfc_chart(df, target_p=0, target_f=0):
             y=target_f, line_dash="solid",
             line_color="rgba(255,82,82,0.5)", line_width=1,
             annotation_text=f"F目標 {target_f}g",
-            annotation_position="bottom right",
+            annotation_position="bottom left",
             annotation_font=dict(color=BLACK, size=11),
         )
     fig.update_layout(
