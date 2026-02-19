@@ -92,6 +92,7 @@ def create_calorie_chart(df, target_cal):
     # カロリー平均/移動平均
     df_active = df[df["meal_count"] > 0]
     if len(df) > 14:
+        # 30日間: 7日移動平均
         cal_series = df["calorie"].replace(0, float("nan")).where(df["meal_count"] > 0)
         cal_ma = cal_series.rolling(7, min_periods=1).mean()
         fig.add_trace(go.Scatter(
@@ -99,7 +100,17 @@ def create_calorie_chart(df, target_cal):
             mode="lines", line=dict(color=TEAL, width=2.5),
             name="移動平均(7日)", connectgaps=True,
         ))
+    elif len(df) > 7:
+        # 14日間: 3日移動平均
+        cal_series = df["calorie"].replace(0, float("nan")).where(df["meal_count"] > 0)
+        cal_ma = cal_series.rolling(3, min_periods=1).mean()
+        fig.add_trace(go.Scatter(
+            x=df["label"], y=cal_ma,
+            mode="lines", line=dict(color=TEAL, width=2.5),
+            name="移動平均(3日)", connectgaps=True,
+        ))
     elif len(df_active) > 0:
+        # 7日間: 期間全体の平均
         avg_cal_val = df_active["calorie"].mean()
         fig.add_hline(
             y=avg_cal_val, line_dash="solid", line_color=TEAL, line_width=2,
@@ -121,7 +132,7 @@ def create_calorie_chart(df, target_cal):
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(tickfont=AXIS_FONT),
         yaxis=dict(gridcolor=GRID_COLOR, tickfont=AXIS_FONT),
-        showlegend=len(df) > 14,
+        showlegend=len(df) > 7,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5, font=dict(size=11, color=BLACK)),
     )
     return fig
@@ -155,8 +166,24 @@ def create_pfc_chart(df, target_p=0, target_f=0):
                 mode="lines", line=dict(color=PINK, width=2.5),
                 name="F移動平均(7日)", connectgaps=True,
             ))
+        elif len(df) > 7:
+            # 14日間: 3日間移動平均
+            p_series = df["protein"].replace(0, float("nan")).where(df["meal_count"] > 0)
+            f_series = df["fat"].replace(0, float("nan")).where(df["meal_count"] > 0)
+            p_ma = p_series.rolling(3, min_periods=1).mean()
+            f_ma = f_series.rolling(3, min_periods=1).mean()
+            fig.add_trace(go.Scatter(
+                x=df["label"], y=p_ma,
+                mode="lines", line=dict(color=TEAL, width=2.5),
+                name="P移動平均(3日)", connectgaps=True,
+            ))
+            fig.add_trace(go.Scatter(
+                x=df["label"], y=f_ma,
+                mode="lines", line=dict(color=PINK, width=2.5),
+                name="F移動平均(3日)", connectgaps=True,
+            ))
         else:
-            # 7・14日間: 期間全体の平均を実線
+            # 7日間: 期間全体の平均を実線
             avg_p = df_active["protein"].mean()
             fig.add_hline(
                 y=avg_p, line_dash="solid", line_color=TEAL, line_width=2,
