@@ -5,11 +5,10 @@
 import streamlit as st
 import time
 
-from config import get_supabase, init_gemini
+from config import get_supabase
 from services import get_available_gemini_models, get_user_profile, update_user_profile
 
 supabase = get_supabase()
-init_gemini()
 
 DEFAULT_USER_ID = "d8875444-a88a-4a31-947d-2174eefb80f0"
 
@@ -18,7 +17,7 @@ if "user" in st.session_state:
 else:
     user_id = DEFAULT_USER_ID
 
-profile = get_user_profile(supabase, user_id)
+profile = get_user_profile(user_id)
 
 st.title("⚙️ 設定")
 

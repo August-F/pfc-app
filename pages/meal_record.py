@@ -39,7 +39,7 @@ st.markdown("""
 # --- モデル・プロフィールを取得 ---
 user = st.session_state["user"]
 selected_model = st.session_state.get("selected_model", "gemini-flash-latest")
-profile = get_user_profile(supabase, user.id)
+profile = get_user_profile(user.id)
 
 
 st.title("AI PFC Manager")
@@ -124,8 +124,7 @@ with st.form("meal_input"):
     submitted = st.form_submit_button("AI解析して記録")
 
     if submitted:
-        _logs = get_meal_logs(supabase, user.id, current_date_str)
-        _logged_meals = _logs.data if _logs and _logs.data else []
+        _logged_meals = logs.data if logs and logs.data else []
         _total_p = _total_f = _total_c = _total_cal = 0
         if _logged_meals:
             _df = pd.DataFrame(_logged_meals)

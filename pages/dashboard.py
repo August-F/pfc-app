@@ -204,7 +204,7 @@ if "user" in st.session_state:
 else:
     user_id = DEFAULT_USER_ID
 
-profile = get_user_profile(supabase, user_id)
+profile = get_user_profile(user_id)
 target_cal = profile.get("target_calories", 2000)
 target_p = profile.get("target_p", 100)
 target_f = profile.get("target_f", 60)

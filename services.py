@@ -2,9 +2,12 @@ import streamlit as st
 import google.generativeai as genai
 import json
 
+from config import get_supabase
+
 
 # --- Gemini関連 ---
 
+@st.cache_data(ttl=3600)
 def get_available_gemini_models():
     """Gemini APIから利用可能なテキスト生成モデル一覧を取得"""
     try:
@@ -281,9 +284,11 @@ def generate_meal_advice(model_name, profile, logged_meals, totals, targets):
 
 # --- DB操作: profiles ---
 
-def get_user_profile(supabase, user_id):
+@st.cache_data(ttl=300)
+def get_user_profile(user_id):
     """ユーザー設定を取得"""
     try:
+        supabase = get_supabase()
         data = supabase.table("profiles").select("*").eq("id", user_id).execute()
         if data.data:
             return data.data[0]
@@ -295,6 +300,7 @@ def get_user_profile(supabase, user_id):
 def update_user_profile(supabase, user_id, updates):
     """ユーザー設定を更新"""
     supabase.table("profiles").update(updates).eq("id", user_id).execute()
+    get_user_profile.clear()
 
 
 # --- DB操作: meal_logs ---
