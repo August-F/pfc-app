@@ -8,7 +8,8 @@ def init_supabase():
     """Supabaseクライアントを初期化して返す"""
     if "supabase" in st.secrets:
         url = st.secrets["supabase"]["url"]
-        key = st.secrets["supabase"]["key"]
+        # service_key が設定されていればサーバーサイド用として使用（RLS をバイパス）
+        key = st.secrets["supabase"].get("service_key") or st.secrets["supabase"]["key"]
         return create_client(url, key)
     return None
 
