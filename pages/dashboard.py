@@ -168,18 +168,24 @@ def create_pfc_chart(df, target_p=0, target_f=0):
                 annotation_position="bottom left",
                 annotation_font=dict(color=BLACK, size=10),
             )
-    # P目標ライン
+    # P目標（塗りつぶし + 境界線）
     if target_p > 0:
+        fig.add_hrect(y0=0, y1=target_p,
+                      fillcolor="rgba(0,172,193,0.10)", line_width=0, layer="below")
         fig.add_hline(
-            y=target_p, line_dash="dash", line_color=GREY_DARK,
+            y=target_p, line_dash="solid",
+            line_color="rgba(0,172,193,0.5)", line_width=1,
             annotation_text=f"P目標 {target_p}g",
             annotation_position="top right",
             annotation_font=dict(color=BLACK, size=11),
         )
-    # F目標ライン
+    # F目標（塗りつぶし + 境界線）
     if target_f > 0:
+        fig.add_hrect(y0=0, y1=target_f,
+                      fillcolor="rgba(255,82,82,0.10)", line_width=0, layer="below")
         fig.add_hline(
-            y=target_f, line_dash="dash", line_color=GREY_DARK,
+            y=target_f, line_dash="solid",
+            line_color="rgba(255,82,82,0.5)", line_width=1,
             annotation_text=f"F目標 {target_f}g",
             annotation_position="bottom right",
             annotation_font=dict(color=BLACK, size=11),
