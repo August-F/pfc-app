@@ -12,7 +12,7 @@ from datetime import timedelta, date
 
 from config import get_supabase
 from services import (
-    analyze_meal_with_advice,
+    analyze_meal_with_gemini,
     get_user_profile,
     save_meal_log, get_meal_logs, delete_meal_log,
     generate_meal_advice, generate_pfc_summary,
@@ -124,43 +124,12 @@ with st.form("meal_input"):
     submitted = st.form_submit_button("AI解析して記録")
 
     if submitted:
-        _logged_meals = logs.data if logs and logs.data else []
-        _total_p = _total_f = _total_c = _total_cal = 0
-        if _logged_meals:
-            _df = pd.DataFrame(_logged_meals)
-            _total_p = _df["p_val"].sum()
-            _total_f = _df["f_val"].sum()
-            _total_c = _df["c_val"].sum()
-            _total_cal = _df["calories"].sum()
-
-        _target_cal = profile.get("target_calories", 2000)
-        _target_p = profile.get("target_p", 100)
-        _target_f = profile.get("target_f", 60)
-        _target_c = profile.get("target_c", 250)
-        _totals = {"cal": _total_cal, "p": _total_p, "f": _total_f, "c": _total_c}
-        _targets = {"cal": _target_cal, "p": _target_p, "f": _target_f, "c": _target_c}
-        _profile_d = {
-            "likes": profile.get("likes") or "",
-            "dislikes": profile.get("dislikes") or "",
-            "preferences": profile.get("preferences") or "",
-        }
-
-        result = analyze_meal_with_advice(
-            food_text, selected_model, _profile_d,
-            _logged_meals, _totals, _targets, meal_type
-        )
+        result = analyze_meal_with_gemini(food_text, selected_model)
         if result:
-            p, f, c, cal, advice = result
+            p, f, c, cal = result
             save_meal_log(supabase, user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal)
-
-            if advice:
-                if "advice_cache" not in st.session_state:
-                    st.session_state["advice_cache"] = {}
-                st.session_state["advice_cache"][current_date_str] = advice
-                st.session_state["advice_needs_refresh"] = False
-
-            st.success(f"記録しました！ {cal}kcal")
-            time.sleep(1)
+            st.session_state["advice_needs_refresh"] = True
+            st.toast(f"✅ 記録しました！ {cal}kcal")
             st.rerun()
 
 # --- グラフ + アドバイス ---
