@@ -107,8 +107,11 @@ def create_calorie_chart(df, target_cal):
             annotation_position="top left",
             annotation_font=dict(color=BLACK, size=10),
         )
+    fig.add_hrect(y0=0, y1=target_cal,
+                  fillcolor="rgba(0,172,193,0.10)", line_width=0, layer="below")
     fig.add_hline(
-        y=target_cal, line_dash="dash", line_color=GREY_DARK,
+        y=target_cal, line_dash="solid",
+        line_color="rgba(0,172,193,0.5)", line_width=1,
         annotation_text=f"目標 {target_cal}kcal",
         annotation_position="top right",
         annotation_font=dict(color=BLACK, size=11),
