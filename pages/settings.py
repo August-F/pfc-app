@@ -6,7 +6,10 @@ import streamlit as st
 import time
 
 from config import get_supabase
-from services import get_available_gemini_models, get_user_profile, update_user_profile
+from services import (
+    get_available_gemini_models, get_user_profile, update_user_profile,
+    get_meal_templates, save_meal_template, delete_meal_template,
+)
 
 supabase = get_supabase()
 
@@ -145,3 +148,59 @@ with st.form("profile_form"):
         st.success("✅ 設定を保存しました！")
         time.sleep(1)
         st.rerun()
+
+st.divider()
+
+# =========================================================
+# テンプレート管理
+# =========================================================
+st.subheader("📋 テンプレート管理")
+st.caption("よく食べる食品（プロテインなど）を登録してワンタップで記録できます")
+
+# --- 新規追加フォーム ---
+with st.form("tpl_add_form"):
+    tpl_new_name = st.text_input("テンプレート名", placeholder="例: マイプロテイン チョコ")
+    tpl_new_food = st.text_input("食品名（メモ用）", placeholder="例: マイプロテイン チョコ味 30g")
+    col1, col2 = st.columns(2)
+    with col1:
+        tpl_new_cal = st.number_input("カロリー (kcal)", min_value=0.0, step=1.0)
+        tpl_new_p   = st.number_input("タンパク質 P (g)", min_value=0.0, step=0.1)
+    with col2:
+        tpl_new_f   = st.number_input("脂質 F (g)", min_value=0.0, step=0.1)
+        tpl_new_c   = st.number_input("炭水化物 C (g)", min_value=0.0, step=0.1)
+    tpl_new_type = st.radio(
+        "デフォルト食事タイプ（任意）",
+        ["なし", "朝食", "昼食", "夕食", "間食"],
+        horizontal=True,
+    )
+    if st.form_submit_button("➕ テンプレートを追加", use_container_width=True):
+        if tpl_new_name:
+            save_meal_template(
+                supabase, user_id,
+                tpl_new_name,
+                tpl_new_food or tpl_new_name,
+                tpl_new_p, tpl_new_f, tpl_new_c, tpl_new_cal,
+                tpl_new_type if tpl_new_type != "なし" else None,
+            )
+            st.success(f"⭐ 「{tpl_new_name}」を追加しました！")
+            time.sleep(1)
+            st.rerun()
+        else:
+            st.warning("テンプレート名を入力してください")
+
+# --- 登録済みテンプレート一覧 ---
+templates = get_meal_templates(supabase, user_id)
+if templates:
+    st.markdown("**登録済みテンプレート**")
+    for tpl in templates:
+        col_info, col_del = st.columns([5, 1])
+        with col_info:
+            st.markdown(
+                f"**{tpl['name']}**　{tpl['food_name']}　"
+                f"{tpl['calories']:.0f}kcal　"
+                f"P:{tpl['p_val']:.1f}g F:{tpl['f_val']:.1f}g C:{tpl['c_val']:.1f}g"
+            )
+        with col_del:
+            if st.button("🗑️", key=f"del_tpl_{tpl['id']}"):
+                delete_meal_template(supabase, tpl["id"])
+                st.rerun()
