@@ -16,6 +16,7 @@ from services import (
     get_user_profile,
     save_meal_log, get_meal_logs, delete_meal_log,
     generate_meal_advice, generate_pfc_summary,
+    get_meal_templates, save_meal_template, delete_meal_template,
 )
 from charts import create_summary_chart
 
@@ -118,6 +119,84 @@ logs = get_meal_logs(supabase, user.id, current_date_str)
 
 # --- 食事入力 ---
 st.subheader("食事を記録")
+
+# ── テンプレート ──────────────────────────────────────────
+templates = get_meal_templates(supabase, user.id)
+
+tab_use, tab_add = st.tabs(["📋 テンプレートから登録", "➕ テンプレートを追加"])
+
+with tab_use:
+    if templates:
+        template_names = [t["name"] for t in templates]
+        selected_name = st.selectbox("テンプレートを選択", template_names, key="tpl_select")
+        tpl = next(t for t in templates if t["name"] == selected_name)
+
+        st.caption(
+            f"{tpl['food_name']}　"
+            f"{tpl['calories']:.0f}kcal　"
+            f"P:{tpl['p_val']:.1f}g　F:{tpl['f_val']:.1f}g　C:{tpl['c_val']:.1f}g"
+        )
+
+        tpl_meal_type = st.radio(
+            "食事タイプ",
+            ["朝食", "昼食", "夕食", "間食"],
+            index=["朝食", "昼食", "夕食", "間食"].index(tpl["meal_type"])
+                  if tpl.get("meal_type") in ["朝食", "昼食", "夕食", "間食"] else 0,
+            horizontal=True,
+            key="tpl_meal_type",
+        )
+
+        col_reg, col_del = st.columns([3, 1])
+        with col_reg:
+            if st.button("✅ このテンプレートで登録", use_container_width=True, key="tpl_register"):
+                save_meal_log(
+                    supabase, user.id,
+                    st.session_state.current_date.isoformat(),
+                    tpl_meal_type,
+                    tpl["food_name"],
+                    tpl["p_val"], tpl["f_val"], tpl["c_val"], tpl["calories"],
+                )
+                st.session_state["advice_needs_refresh"] = True
+                st.toast(f"✅ {tpl['name']} を登録しました！")
+                st.rerun()
+        with col_del:
+            if st.button("🗑️ 削除", use_container_width=True, key="tpl_delete"):
+                delete_meal_template(supabase, tpl["id"])
+                st.toast(f"🗑️ {tpl['name']} を削除しました")
+                st.rerun()
+    else:
+        st.info("テンプレートがまだありません。「テンプレートを追加」タブから登録してください。")
+
+with tab_add:
+    with st.form("tpl_add_form"):
+        tpl_new_name = st.text_input("テンプレート名", placeholder="例: マイプロテイン チョコ")
+        tpl_new_food = st.text_input("食品名（メモ用）", placeholder="例: マイプロテイン チョコ味 30g")
+        col1, col2 = st.columns(2)
+        with col1:
+            tpl_new_cal = st.number_input("カロリー (kcal)", min_value=0.0, step=1.0)
+            tpl_new_p   = st.number_input("タンパク質 P (g)", min_value=0.0, step=0.1)
+        with col2:
+            tpl_new_f   = st.number_input("脂質 F (g)", min_value=0.0, step=0.1)
+            tpl_new_c   = st.number_input("炭水化物 C (g)", min_value=0.0, step=0.1)
+        tpl_new_type = st.radio(
+            "デフォルト食事タイプ（任意）",
+            ["なし", "朝食", "昼食", "夕食", "間食"],
+            horizontal=True,
+        )
+        if st.form_submit_button("➕ テンプレートを保存", use_container_width=True):
+            if tpl_new_name:
+                save_meal_template(
+                    supabase, user.id,
+                    tpl_new_name,
+                    tpl_new_food or tpl_new_name,
+                    tpl_new_p, tpl_new_f, tpl_new_c, tpl_new_cal,
+                    tpl_new_type if tpl_new_type != "なし" else None,
+                )
+                st.toast(f"⭐ 「{tpl_new_name}」をテンプレートに保存しました！")
+                st.rerun()
+            else:
+                st.warning("テンプレート名を入力してください")
+
 with st.form("meal_input"):
     meal_type = st.radio("タイミング", ["朝食", "昼食", "夕食", "間食"], horizontal=True)
     food_text = st.text_area("食べたもの", height=60)

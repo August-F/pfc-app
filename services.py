@@ -328,3 +328,35 @@ def get_meal_logs(supabase, user_id, date_str):
 def delete_meal_log(supabase, log_id):
     """食事ログを削除"""
     supabase.table("meal_logs").delete().eq("id", log_id).execute()
+
+
+# ── テンプレート操作 ──────────────────────────────────────
+
+def get_meal_templates(supabase, user_id: str):
+    """ユーザーのテンプレート一覧を取得"""
+    res = supabase.table("meal_templates") \
+        .select("*") \
+        .eq("user_id", user_id) \
+        .order("created_at", desc=False) \
+        .execute()
+    return res.data or []
+
+
+def save_meal_template(supabase, user_id: str, name: str, food_name: str,
+                       p: float, f: float, c: float, cal: float, meal_type: str = None):
+    """テンプレートを保存"""
+    supabase.table("meal_templates").insert({
+        "user_id":   user_id,
+        "name":      name,
+        "food_name": food_name,
+        "p_val":     p,
+        "f_val":     f,
+        "c_val":     c,
+        "calories":  cal,
+        "meal_type": meal_type,
+    }).execute()
+
+
+def delete_meal_template(supabase, template_id: str):
+    """テンプレートを削除"""
+    supabase.table("meal_templates").delete().eq("id", template_id).execute()
