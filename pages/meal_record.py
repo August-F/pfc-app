@@ -147,7 +147,7 @@ with st.expander("📋 テンプレートから登録"):
         if st.button("✅ このテンプレートで登録", use_container_width=True, key="tpl_register"):
             save_meal_log(
                 supabase, user.id,
-                st.session_state.current_date.isoformat(),
+                st.session_state.current_date,
                 tpl_meal_type,
                 tpl["food_name"],
                 tpl["p_val"], tpl["f_val"], tpl["c_val"], tpl["calories"],
