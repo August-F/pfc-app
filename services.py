@@ -312,7 +312,7 @@ def save_meal_log(supabase, user_id, meal_date, meal_type, text, p, f, c, cal):
         "meal_date": meal_date.isoformat(),
         "meal_type": meal_type,
         "food_name": text,
-        "p_val": p, "f_val": f, "c_val": c, "calories": cal
+        "p_val": round(p), "f_val": round(f), "c_val": round(c), "calories": round(cal)
     }).execute()
 
 
