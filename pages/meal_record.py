@@ -4,7 +4,6 @@
 
 import streamlit as st
 import streamlit.components.v1 as components
-import pandas as pd
 import time
 import base64
 import urllib.parse
@@ -13,6 +12,7 @@ from datetime import timedelta, date
 from config import get_supabase
 from services import (
     analyze_meal_with_gemini,
+    analyze_meal_with_advice,
     get_user_profile,
     save_meal_log, get_meal_logs, delete_meal_log,
     generate_meal_advice, generate_pfc_summary,
@@ -117,6 +117,32 @@ st.markdown(f"""
 current_date_str = st.session_state.current_date.isoformat()
 logs = get_meal_logs(supabase, user.id, current_date_str)
 
+# --- 事前集計（フォーム内AI呼び出しで使用）---
+logged_meals = logs.data if logs and logs.data else []
+total_p = total_f = total_c = total_cal = 0
+if logged_meals:
+    for m in logged_meals:
+        total_p += m["p_val"]
+        total_f += m["f_val"]
+        total_c += m["c_val"]
+        total_cal += m["calories"]
+
+target_cal = profile.get("target_calories", 2000)
+target_p   = profile.get("target_p", 100)
+target_f   = profile.get("target_f", 60)
+target_c   = profile.get("target_c", 250)
+totals  = {"cal": total_cal, "p": total_p, "f": total_f, "c": total_c}
+targets = {"cal": target_cal, "p": target_p, "f": target_f, "c": target_c}
+
+profile_d = {
+    "likes":       profile.get("likes") or "",
+    "dislikes":    profile.get("dislikes") or "",
+    "preferences": profile.get("preferences") or "",
+}
+
+if "advice_cache" not in st.session_state:
+    st.session_state["advice_cache"] = {}
+
 # --- 食事入力 ---
 st.subheader("食事を記録")
 
@@ -164,28 +190,18 @@ with st.form("meal_input"):
     submitted = st.form_submit_button("AI解析して記録")
 
     if submitted:
-        result = analyze_meal_with_gemini(food_text, selected_model)
+        result = analyze_meal_with_advice(
+            food_text, selected_model, profile_d, logged_meals, totals, targets, meal_type
+        )
         if result:
-            p, f, c, cal = result
+            p, f, c, cal, advice = result
             save_meal_log(supabase, user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal)
-            st.session_state["advice_needs_refresh"] = True
+            st.session_state["advice_cache"][current_date_str] = advice
+            st.session_state["advice_needs_refresh"] = False
             st.toast(f"✅ 記録しました！ {cal}kcal")
             st.rerun()
 
 # --- グラフ + アドバイス ---
-total_p = total_f = total_c = total_cal = 0
-if logs and logs.data:
-    df = pd.DataFrame(logs.data)
-    total_p = df["p_val"].sum()
-    total_f = df["f_val"].sum()
-    total_c = df["c_val"].sum()
-    total_cal = df["calories"].sum()
-
-target_cal = profile.get("target_calories", 2000)
-target_p = profile.get("target_p", 100)
-target_f = profile.get("target_f", 60)
-target_c = profile.get("target_c", 250)
-
 chart_data = {
     "Cal": {"current": total_cal, "target": target_cal, "unit": "kcal"},
     "P":   {"current": total_p,   "target": target_p,   "unit": "g"},
@@ -196,16 +212,10 @@ chart_fig = create_summary_chart(chart_data)
 st.plotly_chart(chart_fig, use_container_width=True, config={"staticPlot": True})
 
 # --- PFCサマリー ---
-totals = {"cal": total_cal, "p": total_p, "f": total_f, "c": total_c}
-targets = {"cal": target_cal, "p": target_p, "f": target_f, "c": target_c}
-logged_meals = logs.data if logs and logs.data else []
-
 summary_line = generate_pfc_summary(totals, targets)
 st.markdown(f"<p style='font-size:1.1rem; font-weight:bold; margin:0.2rem 0;'>{summary_line}</p>", unsafe_allow_html=True)
 
 # --- AIアドバイス ---
-if "advice_cache" not in st.session_state:
-    st.session_state["advice_cache"] = {}
 
 ADVICE_ERROR_COOLDOWN = 60
 advice_error_key = "advice_error_until"
@@ -226,11 +236,6 @@ else:
     if needs_refresh:
         with st.spinner("🏋️ アドバイスを考え中..."):
             try:
-                profile_d = {
-                    "likes": profile.get("likes") or "",
-                    "dislikes": profile.get("dislikes") or "",
-                    "preferences": profile.get("preferences") or "",
-                }
                 advice_text = generate_meal_advice(
                     selected_model, profile_d, logged_meals, totals, targets
                 )

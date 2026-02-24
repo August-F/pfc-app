@@ -57,7 +57,10 @@ def analyze_meal_with_gemini(text, model_name="gemini-3-flash"):
         {{"cal": int, "p": int, "f": int, "c": int}}
         例: {{"cal": 500, "p": 20, "f": 15, "c": 60}}
         """
-        res = model.generate_content(prompt)
+        res = model.generate_content(
+            prompt,
+            generation_config=genai.GenerationConfig(max_output_tokens=100, temperature=0.0),
+        )
         json_str = res.text.strip().replace("```json", "").replace("```", "")
         data = json.loads(json_str)
         return data.get("p", 0), data.get("f", 0), data.get("c", 0), data.get("cal", 0)
@@ -157,7 +160,10 @@ def analyze_meal_with_advice(text, model_name, profile, logged_meals, totals, ta
 例:
 {{"cal": 500, "p": 20, "f": 15, "c": 60, "advice": "💪素晴らしいタンパク質量です！..."}}
 """
-        res = model.generate_content(prompt)
+        res = model.generate_content(
+            prompt,
+            generation_config=genai.GenerationConfig(max_output_tokens=400),
+        )
         json_str = res.text.strip().replace("```json", "").replace("```", "")
         data = json.loads(json_str)
 
@@ -272,7 +278,10 @@ def generate_meal_advice(model_name, profile, logged_meals, totals, targets):
 - マークダウン記法は使わない（絵文字はOK。💪🏋️‍♀️🔥を積極的に使う）
 - カロリーやPFCの数値は別途表示されるため、アドバイスには含めない
 """
-        res = model.generate_content(prompt)
+        res = model.generate_content(
+            prompt,
+            generation_config=genai.GenerationConfig(max_output_tokens=300),
+        )
         return res.text.strip()
     except Exception as e:
         error_msg = str(e)
