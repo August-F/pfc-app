@@ -1,6 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
 import json
+import re
 
 from config import get_supabase
 
@@ -59,9 +60,11 @@ def analyze_meal_with_gemini(text, model_name="gemini-3-flash"):
         """
         res = model.generate_content(
             prompt,
-            generation_config=genai.GenerationConfig(max_output_tokens=100, temperature=0.0, response_mime_type="application/json"),
+            generation_config=genai.GenerationConfig(max_output_tokens=100, temperature=0.0),
         )
-        data = json.loads(res.text)
+        raw = res.text.strip().replace("```json", "").replace("```", "").strip()
+        s, e = raw.find('{'), raw.rfind('}')
+        data = json.loads(raw[s:e+1] if s != -1 and e != -1 else raw)
         return data.get("p", 0), data.get("f", 0), data.get("c", 0), data.get("cal", 0)
     except Exception as e:
         # 画面上にデバッグ用のエラー内容を表示
@@ -161,9 +164,25 @@ def analyze_meal_with_advice(text, model_name, profile, logged_meals, totals, ta
 """
         res = model.generate_content(
             prompt,
-            generation_config=genai.GenerationConfig(max_output_tokens=800, response_mime_type="application/json"),
+            generation_config=genai.GenerationConfig(max_output_tokens=600),
         )
-        data = json.loads(res.text)
+        raw = res.text.strip().replace("```json", "").replace("```", "").strip()
+        s, e = raw.find('{'), raw.rfind('}')
+        raw = raw[s:e+1] if s != -1 and e != -1 else raw
+
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            # アドバイス文字列内の改行等でJSONが壊れた場合、正規表現でフォールバック
+            def _get_int(key):
+                m = re.search(rf'"{key}"\s*:\s*(\d+)', raw)
+                return int(m.group(1)) if m else 0
+            adv_m = re.search(r'"advice"\s*:\s*"(.*?)"\s*[,}]', raw, re.DOTALL)
+            data = {
+                "cal": _get_int("cal"), "p": _get_int("p"),
+                "f": _get_int("f"), "c": _get_int("c"),
+                "advice": adv_m.group(1).replace("\n", " ") if adv_m else "",
+            }
 
         p = data.get("p", 0)
         f = data.get("f", 0)
