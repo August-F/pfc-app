@@ -159,8 +159,10 @@ def analyze_meal_with_advice(text, model_name, profile, logged_meals, totals, ta
 以下のJSON形式のみで出力してください（マークダウン記法不要、コードブロック不要）:
 {{"cal": int, "p": int, "f": int, "c": int, "advice": "アドバイス文字列"}}
 
-例:
-{{"cal": 500, "p": 20, "f": 15, "c": 60, "advice": "💪素晴らしいタンパク質量です！..."}}
+【重要】cal/p/f/c は「今回の食事（タスク1）単体の推測値」を出力すること。既存合計との足し算結果ではない。
+
+例（鶏むね肉200gの場合）:
+{{"cal": 330, "p": 62, "f": 4, "c": 0, "advice": "💪素晴らしいタンパク質量です！..."}}
 """
         res = model.generate_content(
             prompt,
