@@ -161,8 +161,8 @@ def analyze_meal_with_advice(text, model_name, profile, logged_meals, totals, ta
 
 【重要】cal/p/f/c は「今回の食事（タスク1）単体の推測値」を出力すること。既存合計との足し算結果ではない。
 
-例（鶏むね肉200gの場合）:
-{{"cal": 330, "p": 62, "f": 4, "c": 0, "advice": "💪素晴らしいタンパク質量です！..."}}
+例（ご飯1杯＋鶏唐揚げ3個の場合）:
+{{"cal": 620, "p": 28, "f": 22, "c": 75, "advice": "💪タンパク質しっかり取れてますね！..."}}
 """
         res = model.generate_content(
             prompt,
