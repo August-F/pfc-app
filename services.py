@@ -1,7 +1,6 @@
 import streamlit as st
 import google.generativeai as genai
 import json
-import re
 
 from config import get_supabase
 
@@ -58,13 +57,9 @@ def analyze_meal_with_gemini(text, model_name="gemini-3-flash"):
         {{"cal": int, "p": int, "f": int, "c": int}}
         例: {{"cal": 500, "p": 20, "f": 15, "c": 60}}
         """
-        res = model.generate_content(
-            prompt,
-            generation_config=genai.GenerationConfig(max_output_tokens=100, temperature=0.0),
-        )
-        raw = res.text.strip().replace("```json", "").replace("```", "").strip()
-        s, e = raw.find('{'), raw.rfind('}')
-        data = json.loads(raw[s:e+1] if s != -1 and e != -1 else raw)
+        res = model.generate_content(prompt)
+        json_str = res.text.strip().replace("```json", "").replace("```", "")
+        data = json.loads(json_str)
         return data.get("p", 0), data.get("f", 0), data.get("c", 0), data.get("cal", 0)
     except Exception as e:
         # 画面上にデバッグ用のエラー内容を表示
@@ -159,49 +154,18 @@ def analyze_meal_with_advice(text, model_name, profile, logged_meals, totals, ta
 以下のJSON形式のみで出力してください（マークダウン記法不要、コードブロック不要）:
 {{"cal": int, "p": int, "f": int, "c": int, "advice": "アドバイス文字列"}}
 
-【重要】cal/p/f/c は「今回の食事（タスク1）単体の推測値」を出力すること。既存合計との足し算結果ではない。
-
-例（ご飯1杯＋鶏唐揚げ3個の場合）:
-{{"cal": 620, "p": 28, "f": 22, "c": 75, "advice": "💪タンパク質しっかり取れてますね！..."}}
+例:
+{{"cal": 500, "p": 20, "f": 15, "c": 60, "advice": "💪素晴らしいタンパク質量です！..."}}
 """
-        res = model.generate_content(
-            prompt,
-            generation_config=genai.GenerationConfig(max_output_tokens=600),
-        )
-        raw = res.text.strip().replace("```json", "").replace("```", "").strip()
-        s, e = raw.find('{'), raw.rfind('}')
-        raw = raw[s:e+1] if s != -1 and e != -1 else raw
+        res = model.generate_content(prompt)
+        json_str = res.text.strip().replace("```json", "").replace("```", "")
+        data = json.loads(json_str)
 
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
-            # アドバイス文字列内の改行等でJSONが壊れた場合、正規表現でフォールバック
-            def _get_int(key):
-                m = re.search(rf'"{key}"\s*:\s*(\d+)', raw)
-                return int(m.group(1)) if m else 0
-            adv_m = re.search(r'"advice"\s*:\s*"(.*?)"\s*[,}]', raw, re.DOTALL)
-            data = {
-                "cal": _get_int("cal"), "p": _get_int("p"),
-                "f": _get_int("f"), "c": _get_int("c"),
-                "advice": adv_m.group(1).replace("\n", " ") if adv_m else "",
-            }
-
-        # キー名のゆらぎに対応するフォールバック
-        def _get(d, *keys):
-            for k in keys:
-                v = d.get(k)
-                if v is not None:
-                    return v
-            return 0
-
-        p   = _get(data, "p", "protein")
-        f   = _get(data, "f", "fat")
-        c   = _get(data, "c", "carbs", "carbohydrate", "carbohydrates")
-        cal = _get(data, "cal", "calories", "calorie")
+        p = data.get("p", 0)
+        f = data.get("f", 0)
+        c = data.get("c", 0)
+        cal = data.get("cal", 0)
         advice = data.get("advice", "")
-
-        # デバッグ: rerun後も見えるようsession_stateに保存
-        st.session_state["_debug_pfc"] = f"raw={raw[:300]}\n→ p={p} f={f} c={c} cal={cal}"
 
         return p, f, c, cal, advice
 
@@ -308,10 +272,7 @@ def generate_meal_advice(model_name, profile, logged_meals, totals, targets):
 - マークダウン記法は使わない（絵文字はOK。💪🏋️‍♀️🔥を積極的に使う）
 - カロリーやPFCの数値は別途表示されるため、アドバイスには含めない
 """
-        res = model.generate_content(
-            prompt,
-            generation_config=genai.GenerationConfig(max_output_tokens=300),
-        )
+        res = model.generate_content(prompt)
         return res.text.strip()
     except Exception as e:
         error_msg = str(e)
