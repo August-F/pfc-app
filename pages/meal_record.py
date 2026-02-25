@@ -38,6 +38,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- モデル・プロフィールを取得 ---
+if "user" not in st.session_state:
+    st.session_state["user"] = type("_DefaultUser", (), {
+        "id": "d8875444-a88a-4a31-947d-2174eefb80f0",
+        "email": "guest@example.com",
+    })()
 user = st.session_state["user"]
 selected_model = st.session_state.get("selected_model", "gemini-flash-latest")
 profile = get_user_profile(user.id)
