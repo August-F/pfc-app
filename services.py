@@ -200,8 +200,8 @@ def analyze_meal_with_advice(text, model_name, profile, logged_meals, totals, ta
         cal = _get(data, "cal", "calories", "calorie")
         advice = data.get("advice", "")
 
-        # デバッグ: モデルの生レスポンスとパース結果を表示
-        st.caption(f"[DEBUG] raw={raw[:120]} → p={p} f={f} c={c} cal={cal}")
+        # デバッグ: rerun後も見えるようsession_stateに保存
+        st.session_state["_debug_pfc"] = f"raw={raw[:300]}\n→ p={p} f={f} c={c} cal={cal}"
 
         return p, f, c, cal, advice
 

@@ -267,6 +267,11 @@ elif error_msg is None and not is_cooldown:
         st.session_state["advice_needs_refresh"] = True
         st.rerun()
 
+# --- デバッグ表示 ---
+if "_debug_pfc" in st.session_state:
+    with st.expander("[DEBUG] 直前のAI解析結果", expanded=True):
+        st.code(st.session_state["_debug_pfc"])
+
 # --- 履歴 ---
 MEAL_ORDER = {"朝食": 0, "昼食": 1, "夕食": 2, "間食": 3}
 st.subheader("履歴")
