@@ -59,7 +59,7 @@ def analyze_meal_with_gemini(text, model_name="gemini-3-flash"):
         """
         res = model.generate_content(
             prompt,
-            generation_config=genai.GenerationConfig(max_output_tokens=100, temperature=0.0),
+            generation_config=genai.GenerationConfig(max_output_tokens=100, temperature=0.0, response_mime_type="application/json"),
         )
         json_str = res.text.strip().replace("```json", "").replace("```", "")
         start = json_str.find('{')
@@ -166,7 +166,7 @@ def analyze_meal_with_advice(text, model_name, profile, logged_meals, totals, ta
 """
         res = model.generate_content(
             prompt,
-            generation_config=genai.GenerationConfig(max_output_tokens=400),
+            generation_config=genai.GenerationConfig(max_output_tokens=400, response_mime_type="application/json"),
         )
         json_str = res.text.strip().replace("```json", "").replace("```", "")
         start = json_str.find('{')
