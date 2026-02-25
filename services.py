@@ -61,12 +61,7 @@ def analyze_meal_with_gemini(text, model_name="gemini-3-flash"):
             prompt,
             generation_config=genai.GenerationConfig(max_output_tokens=100, temperature=0.0, response_mime_type="application/json"),
         )
-        json_str = res.text.strip().replace("```json", "").replace("```", "")
-        start = json_str.find('{')
-        end = json_str.rfind('}')
-        if start != -1 and end != -1:
-            json_str = json_str[start:end+1]
-        data = json.loads(json_str)
+        data = json.loads(res.text)
         return data.get("p", 0), data.get("f", 0), data.get("c", 0), data.get("cal", 0)
     except Exception as e:
         # 画面上にデバッグ用のエラー内容を表示
@@ -166,14 +161,9 @@ def analyze_meal_with_advice(text, model_name, profile, logged_meals, totals, ta
 """
         res = model.generate_content(
             prompt,
-            generation_config=genai.GenerationConfig(max_output_tokens=400, response_mime_type="application/json"),
+            generation_config=genai.GenerationConfig(max_output_tokens=800, response_mime_type="application/json"),
         )
-        json_str = res.text.strip().replace("```json", "").replace("```", "")
-        start = json_str.find('{')
-        end = json_str.rfind('}')
-        if start != -1 and end != -1:
-            json_str = json_str[start:end+1]
-        data = json.loads(json_str)
+        data = json.loads(res.text)
 
         p = data.get("p", 0)
         f = data.get("f", 0)
