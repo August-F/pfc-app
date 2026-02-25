@@ -186,11 +186,22 @@ def analyze_meal_with_advice(text, model_name, profile, logged_meals, totals, ta
                 "advice": adv_m.group(1).replace("\n", " ") if adv_m else "",
             }
 
-        p = data.get("p", 0)
-        f = data.get("f", 0)
-        c = data.get("c", 0)
-        cal = data.get("cal", 0)
+        # キー名のゆらぎに対応するフォールバック
+        def _get(d, *keys):
+            for k in keys:
+                v = d.get(k)
+                if v is not None:
+                    return v
+            return 0
+
+        p   = _get(data, "p", "protein")
+        f   = _get(data, "f", "fat")
+        c   = _get(data, "c", "carbs", "carbohydrate", "carbohydrates")
+        cal = _get(data, "cal", "calories", "calorie")
         advice = data.get("advice", "")
+
+        # デバッグ: モデルの生レスポンスとパース結果を表示
+        st.caption(f"[DEBUG] raw={raw[:120]} → p={p} f={f} c={c} cal={cal}")
 
         return p, f, c, cal, advice
 
