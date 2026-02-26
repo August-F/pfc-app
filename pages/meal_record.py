@@ -186,10 +186,10 @@ if logs and logs.data:
     total_c = df["c_val"].sum()
     total_cal = df["calories"].sum()
 
-target_cal = profile.get("target_calories", 2000)
-target_p = profile.get("target_p", 100)
-target_f = profile.get("target_f", 60)
-target_c = profile.get("target_c", 250)
+target_cal = profile.get("target_calories") or 2000
+target_p   = profile.get("target_p") or 100
+target_f   = profile.get("target_f") or 60
+target_c   = profile.get("target_c") or 250
 
 chart_data = {
     "Cal": {"current": total_cal, "target": target_cal, "unit": "kcal"},

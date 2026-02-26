@@ -321,7 +321,7 @@ def get_meal_logs(supabase, user_id, date_str):
     try:
         return supabase.table("meal_logs").select("*").eq("user_id", user_id).eq("meal_date", date_str).execute()
     except Exception as e:
-        st.error(f"データ取得エラー: {e}")
+        print(f"[get_meal_logs] データ取得エラー: {e}")
         return None
 
 

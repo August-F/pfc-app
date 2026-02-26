@@ -80,3 +80,25 @@ class TestCreateSummaryChart:
         fig = create_summary_chart(SAMPLE_DATA)
         # Cal/P/F/C の4項目 → 4つのアノテーション
         assert len(fig.layout.annotations) == 4
+
+    def test_none_target_no_type_error(self):
+        """target が None でも TypeError が発生しないこと（Supabase null 値の模倣）"""
+        none_target_data = {
+            "Cal": {"current": 673, "target": None, "unit": "kcal"},
+            "P":   {"current": 59,  "target": None, "unit": "g"},
+            "F":   {"current": 20,  "target": None, "unit": "g"},
+            "C":   {"current": 80,  "target": None, "unit": "g"},
+        }
+        fig = create_summary_chart(none_target_data)
+        assert isinstance(fig, go.Figure)
+
+    def test_none_current_no_type_error(self):
+        """current が None でも TypeError が発生しないこと"""
+        none_current_data = {
+            "Cal": {"current": None, "target": 2000, "unit": "kcal"},
+            "P":   {"current": None, "target": 100,  "unit": "g"},
+            "F":   {"current": None, "target": 60,   "unit": "g"},
+            "C":   {"current": None, "target": 250,  "unit": "g"},
+        }
+        fig = create_summary_chart(none_current_data)
+        assert isinstance(fig, go.Figure)

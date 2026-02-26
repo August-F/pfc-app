@@ -36,10 +36,15 @@ def create_summary_chart(data_dict):
 
     for label in labels:
         d = data_dict[label]
-        tgt = d["target"] if d["target"] > 0 else 1
-        ratio = (d["current"] / tgt) * 100
+        raw_target = d["target"]
+        raw_current = d["current"]
+        safe_target = raw_target if isinstance(raw_target, (int, float)) and raw_target > 0 else 1
+        safe_current = raw_current if isinstance(raw_current, (int, float)) else 0
+        ratio = (safe_current / safe_target) * 100
         ratios.append(ratio)
-        value_texts.append(f"{int(d['current'])} / {int(d['target'])} {d['unit']}")
+        disp_target = int(raw_target) if isinstance(raw_target, (int, float)) else 0
+        disp_current = int(raw_current) if isinstance(raw_current, (int, float)) else 0
+        value_texts.append(f"{disp_current} / {disp_target} {d['unit']}")
 
     max_ratio = max(ratios) if ratios else 0
     x_display_max = max(max_ratio, 100)

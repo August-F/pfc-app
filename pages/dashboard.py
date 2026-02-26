@@ -42,7 +42,7 @@ def fetch_meal_logs_range(user_id: str, start_date: str, end_date: str):
             if attempt < 2:
                 _time.sleep(1)
             else:
-                st.error(f"データ取得エラー: {e}")
+                print(f"[fetch_meal_logs_range] データ取得エラー: {e}")
                 return []
 
 
@@ -241,10 +241,10 @@ else:
     user_id = DEFAULT_USER_ID
 
 profile = get_user_profile(user_id)
-target_cal = profile.get("target_calories", 2000)
-target_p = profile.get("target_p", 100)
-target_f = profile.get("target_f", 60)
-target_c = profile.get("target_c", 250)
+target_cal = profile.get("target_calories") or 2000
+target_p   = profile.get("target_p") or 100
+target_f   = profile.get("target_f") or 60
+target_c   = profile.get("target_c") or 250
 
 st.title("📊 PFCダッシュボード")
 
