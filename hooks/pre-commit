@@ -1,0 +1,60 @@
+#!/bin/sh
+# コミット前に pytest を実行する。
+# テストが失敗した場合は Claude で原因を調査・修正し、再テストする。
+
+# Claude CLI のパスを動的に取得（バージョンアップに追従）
+CLAUDE_BIN=$(ls "$HOME/.vscode/extensions/anthropic.claude-code-"*/resources/native-binary/claude.exe 2>/dev/null | sort -V | tail -1)
+
+# ─── テスト実行 ───────────────────────────────────────────────────────────────
+echo ">>> pre-commit: pytest を実行中..."
+TEST_OUTPUT=$(python -m pytest --tb=short -q 2>&1)
+EXIT_CODE=$?
+
+echo "$TEST_OUTPUT"
+
+if [ $EXIT_CODE -eq 0 ]; then
+    echo ">>> テスト通過。コミットを続行します。"
+    exit 0
+fi
+
+# ─── テスト失敗 → Claude で調査・修正 ─────────────────────────────────────────
+echo ""
+echo ">>> テストが失敗しました。Claude で原因を調査・修正します..."
+
+if [ -z "$CLAUDE_BIN" ] || [ ! -f "$CLAUDE_BIN" ]; then
+    echo "Claude CLI が見つかりませんでした。手動で修正してください。"
+    echo "スキップするには: git commit --no-verify"
+    exit 1
+fi
+
+"$CLAUDE_BIN" -p "pre-commit フックでテストが失敗しました。
+以下のテスト出力を確認して原因を調査し、テストが通るようにコードを修正してください。
+
+--- テスト出力 ---
+$TEST_OUTPUT" --dangerously-skip-permissions
+
+# ─── 修正後の再テスト ─────────────────────────────────────────────────────────
+echo ""
+echo ">>> 修正後、テストを再実行中..."
+TEST_OUTPUT2=$(python -m pytest --tb=short -q 2>&1)
+RE_EXIT=$?
+
+echo "$TEST_OUTPUT2"
+
+if [ $RE_EXIT -eq 0 ]; then
+    # Claude が修正したファイルを自動ステージしてコミットを続行
+    FIXED_FILES=$(git diff --name-only)
+    if [ -n "$FIXED_FILES" ]; then
+        echo ""
+        echo ">>> Claude が以下のファイルを修正しました（自動ステージ）:"
+        echo "$FIXED_FILES"
+        echo "$FIXED_FILES" | xargs git add
+    fi
+    echo ">>> テスト通過。コミットを続行します。"
+    exit 0
+else
+    echo ""
+    echo ">>> テストがまだ失敗しています。手動で確認してください。"
+    echo "スキップするには: git commit --no-verify"
+    exit 1
+fi
