@@ -100,14 +100,18 @@ for cat in CATEGORIES:
                 columns=["食品名", "目安量", "kcal", "P(g)", "F(g)", "C(g)"],
             )
             fmt = {"kcal": "{:.1f}", "P(g)": "{:.1f}", "F(g)": "{:.1f}", "C(g)": "{:.1f}"}
+            row_height = 35
+            header_height = 38
+            tbl_height = len(df) * row_height + header_height
             if "メイン" in cat["title"]:
                 st.dataframe(
                     df.style.apply(_highlight_pf, axis=1).format(fmt),
                     hide_index=True,
                     use_container_width=True,
+                    height=tbl_height,
                 )
             else:
-                st.dataframe(df.style.format(fmt), hide_index=True, use_container_width=True)
+                st.dataframe(df.style.format(fmt), hide_index=True, use_container_width=True, height=tbl_height)
         else:
             names = [item[0] for item in cat["items"]]
             df = pd.DataFrame(names, columns=["食品名"])
