@@ -233,15 +233,18 @@ def _micro_color(current, target):
     else:
         return "#9e9e9e"
 
-cols = st.columns(4)
-for col, (label, cur, tgt, unit) in zip(cols, micro_items):
+micro_html = "<div style='display:flex; flex-wrap:nowrap; gap:0.5rem; justify-content:space-between; overflow-x:auto;'>"
+for label, cur, tgt, unit in micro_items:
     color = _micro_color(cur, tgt)
-    col.markdown(
-        f"<div style='text-align:center; font-size:0.75rem; color:#888;'>{label}</div>"
-        f"<div style='text-align:center; font-size:1rem; font-weight:bold; color:{color};'>{cur:.1f}</div>"
-        f"<div style='text-align:center; font-size:0.7rem; color:#aaa;'>/{tgt}{unit}</div>",
-        unsafe_allow_html=True,
+    micro_html += (
+        f"<div style='flex:1; min-width:3.5rem; text-align:center;'>"
+        f"<div style='font-size:0.75rem; color:#888; white-space:nowrap;'>{label}</div>"
+        f"<div style='font-size:1rem; font-weight:bold; color:{color};'>{cur:.1f}</div>"
+        f"<div style='font-size:0.7rem; color:#aaa; white-space:nowrap;'>/{tgt}{unit}</div>"
+        f"</div>"
     )
+micro_html += "</div>"
+st.markdown(micro_html, unsafe_allow_html=True)
 
 # --- AIアドバイス（一時無効化） ---
 # if "advice_cache" not in st.session_state:
