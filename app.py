@@ -128,6 +128,7 @@ pg = st.navigation({
     "メイン": [
         st.Page("pages/meal_record.py", title="食事記録", icon="🍽️", default=True),
         st.Page("pages/dashboard.py",   title="PFCダッシュボード", icon="📊"),
+        st.Page("pages/nutrition.py",   title="栄養成分", icon="🥗"),
     ],
     "その他": [
         st.Page("pages/settings.py", title="設定", icon="⚙️"),
