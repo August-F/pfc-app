@@ -220,8 +220,8 @@ MICRO_TARGETS = {"iron": 10.5, "folate": 240.0, "calcium": 650.0, "vit_d": 8.5}
 micro_items = [
     ("鉄",      total_iron,    MICRO_TARGETS["iron"],    "mg"),
     ("葉酸",    total_folate,  MICRO_TARGETS["folate"],  "µg"),
-    ("Ca",      total_calcium, MICRO_TARGETS["calcium"], "mg"),
-    ("VitD",    total_vit_d,   MICRO_TARGETS["vit_d"],   "µg"),
+    ("カルシウム", total_calcium, MICRO_TARGETS["calcium"], "mg"),
+    ("ビタミンD",  total_vit_d,   MICRO_TARGETS["vit_d"],   "µg"),
 ]
 
 def _micro_color(current, target):
