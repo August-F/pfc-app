@@ -35,11 +35,13 @@ CATEGORIES = [
             ("🐟 カツオ",             "刺身5切れ (90g)", 95, 20.2, 1.8,  0.1),
             ("🥩 豚ロース",           "1枚 (100g)",     263, 19.3, 19.2, 0.1),
             ("🐟 まぐろ赤身",         "刺身5切れ (80g)", 84, 18.7, 0.8,  0.1),
-            ("🐟 ぶり",               "1切れ (80g)",    179, 17.6, 11.2, 0.2),
+            ("🐟 ぶり",               "刺身5切れ (80g)", 178, 17.1, 14.1, 0.2),
             ("🥩 合い挽き肉（豚＋牛）", "100g",           272, 17.2, 21.4, 0.3),
             ("🍗 鶏もも肉（皮あり）", "100g",           204, 16.6, 14.2, 0.1),
-            ("🐟 サーモン",           "1切れ (80g)",    147, 16.4, 8.8,  0.1),
-            ("🐟 さば",               "1切れ (80g)",    167, 16.3, 11.0, 0.3),
+            ("🐟 サーモン",           "刺身5切れ (80g)", 163, 16.1, 11.9, 0.1),
+            ("🐟 しめさば",           "5切れ (80g)",     200, 14.7, 15.6, 0.3),
+            ("🐟 焼き魚（さば）",     "1切れ (80g)",    248, 20.8, 17.4, 0.1),
+            ("🐟 焼き魚（鮭）",       "1切れ (80g)",    150, 19.8,  8.1, 0.1),
             ("🐟 えび",               "5尾 (80g)",       68, 15.4, 0.5,  0.1),
             ("🥩 豚バラ",             "100g",           395, 14.4, 35.4, 0.1),
             ("🐟 いか・たこ",         "1/2杯 (80g)",     67, 14.2, 0.8,  0.1),
@@ -81,9 +83,14 @@ CATEGORIES = [
 # 表示
 # ---------------------------------------------------------------------------
 
-def _highlight_high_fat(row):
-    color = "background-color: #ffb3ba" if row["F(g)"] > 20 else ""
-    return [color] * len(row)
+def _highlight_pf(row):
+    styles = [""] * len(row)
+    cols = list(row.index)
+    if row["F(g)"] >= 20:
+        styles[cols.index("F(g)")] = "background-color: #ffb3ba"
+    if row["P(g)"] >= 20:
+        styles[cols.index("P(g)")] = "background-color: #c8f5c8"
+    return styles
 
 
 for cat in CATEGORIES:
@@ -97,7 +104,7 @@ for cat in CATEGORIES:
             fmt = {"kcal": "{:.1f}", "P(g)": "{:.1f}", "F(g)": "{:.1f}", "C(g)": "{:.1f}"}
             if "メイン" in cat["title"]:
                 st.dataframe(
-                    df.style.apply(_highlight_high_fat, axis=1).format(fmt),
+                    df.style.apply(_highlight_pf, axis=1).format(fmt),
                     hide_index=True,
                     use_container_width=True,
                 )
