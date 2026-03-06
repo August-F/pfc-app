@@ -103,7 +103,7 @@ class TestAnalyzeMealWithGemini:
     def test_valid_response_parsed_correctly(self, mocker):
         """正常なJSONレスポンスが正しくパースされること"""
         mock_response = MagicMock()
-        mock_response.text = '{"cal": 500, "p": 30, "f": 15, "c": 60}'
+        mock_response.text = '{"cal": 500, "p": 30, "f": 15, "c": 60, "iron_mg": 2.5, "folate_ug": 80.0, "calcium_mg": 150.0, "vitamin_d_ug": 3.0}'
         mock_model = MagicMock()
         mock_model.generate_content.return_value = mock_response
         mocker.patch("services.genai.GenerativeModel", return_value=mock_model)
@@ -111,16 +111,20 @@ class TestAnalyzeMealWithGemini:
         result = analyze_meal_with_gemini("鶏むね肉とご飯", "gemini-flash")
 
         assert result is not None
-        p, f, c, cal = result
+        p, f, c, cal, iron, folate, calcium, vit_d = result
         assert p == 30
         assert f == 15
         assert c == 60
         assert cal == 500
+        assert iron == 2.5
+        assert folate == 80.0
+        assert calcium == 150.0
+        assert vit_d == 3.0
 
     def test_markdown_fences_are_stripped(self, mocker):
         """コードブロック(```json ... ```)付きのレスポンスも正しくパースされること"""
         mock_response = MagicMock()
-        mock_response.text = '```json\n{"cal": 400, "p": 25, "f": 10, "c": 50}\n```'
+        mock_response.text = '```json\n{"cal": 400, "p": 25, "f": 10, "c": 50, "iron_mg": 1.0, "folate_ug": 40.0, "calcium_mg": 100.0, "vitamin_d_ug": 1.0}\n```'
         mock_model = MagicMock()
         mock_model.generate_content.return_value = mock_response
         mocker.patch("services.genai.GenerativeModel", return_value=mock_model)
@@ -128,7 +132,7 @@ class TestAnalyzeMealWithGemini:
         result = analyze_meal_with_gemini("サラダチキン", "gemini-flash")
 
         assert result is not None
-        p, f, c, cal = result
+        p, f, c, cal, iron, folate, calcium, vit_d = result
         assert cal == 400
 
     def test_invalid_json_returns_none(self, mocker):
@@ -147,7 +151,7 @@ class TestAnalyzeMealWithGemini:
     def test_missing_keys_default_to_zero(self, mocker):
         """JSONキーが一部欠けていても 0 として扱われること"""
         mock_response = MagicMock()
-        mock_response.text = '{"cal": 300}'  # p, f, c が欠落
+        mock_response.text = '{"cal": 300}'  # p, f, c, 微量栄養素 が欠落
         mock_model = MagicMock()
         mock_model.generate_content.return_value = mock_response
         mocker.patch("services.genai.GenerativeModel", return_value=mock_model)
@@ -155,8 +159,12 @@ class TestAnalyzeMealWithGemini:
         result = analyze_meal_with_gemini("テスト食品", "gemini-flash")
 
         assert result is not None
-        p, f, c, cal = result
+        p, f, c, cal, iron, folate, calcium, vit_d = result
         assert p == 0
         assert f == 0
         assert c == 0
         assert cal == 300
+        assert iron == 0
+        assert folate == 0
+        assert calcium == 0
+        assert vit_d == 0

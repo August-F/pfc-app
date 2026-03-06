@@ -172,20 +172,26 @@ with st.form("meal_input"):
     if submitted:
         result = analyze_meal_with_gemini(food_text, selected_model)
         if result:
-            p, f, c, cal = result
-            save_meal_log(supabase, user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal)
+            p, f, c, cal, iron, folate, calcium, vit_d = result
+            save_meal_log(supabase, user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal,
+                          iron_mg=iron, folate_ug=folate, calcium_mg=calcium, vitamin_d_ug=vit_d)
             # st.session_state["advice_needs_refresh"] = True  # アドバイス機能を一時無効化
             st.toast(f"✅ 記録しました！ {cal}kcal")
             st.rerun()
 
 # --- グラフ + アドバイス ---
 total_p = total_f = total_c = total_cal = 0
+total_iron = total_folate = total_calcium = total_vit_d = 0.0
 if logs and logs.data:
     df = pd.DataFrame(logs.data)
     total_p = df["p_val"].sum()
     total_f = df["f_val"].sum()
     total_c = df["c_val"].sum()
     total_cal = df["calories"].sum()
+    total_iron   = df["iron_mg"].fillna(0).sum()   if "iron_mg"    in df.columns else 0.0
+    total_folate = df["folate_ug"].fillna(0).sum() if "folate_ug"   in df.columns else 0.0
+    total_calcium= df["calcium_mg"].fillna(0).sum()if "calcium_mg"  in df.columns else 0.0
+    total_vit_d  = df["vitamin_d_ug"].fillna(0).sum() if "vitamin_d_ug" in df.columns else 0.0
 
 target_cal = profile.get("target_calories") or 2000
 target_p   = profile.get("target_p") or 100
@@ -208,6 +214,34 @@ logged_meals = logs.data if logs and logs.data else []
 
 summary_line = generate_pfc_summary(totals, targets)
 st.markdown(f"<p style='font-size:1.1rem; font-weight:bold; margin:0.2rem 0;'>{summary_line}</p>", unsafe_allow_html=True)
+
+# --- 微量栄養素サマリー ---
+MICRO_TARGETS = {"iron": 10.5, "folate": 240.0, "calcium": 650.0, "vit_d": 8.5}
+micro_items = [
+    ("鉄",      total_iron,    MICRO_TARGETS["iron"],    "mg"),
+    ("葉酸",    total_folate,  MICRO_TARGETS["folate"],  "µg"),
+    ("Ca",      total_calcium, MICRO_TARGETS["calcium"], "mg"),
+    ("VitD",    total_vit_d,   MICRO_TARGETS["vit_d"],   "µg"),
+]
+
+def _micro_color(current, target):
+    ratio = current / target if target else 0
+    if ratio >= 0.8:
+        return "#4caf50"
+    elif ratio >= 0.5:
+        return "#ff9800"
+    else:
+        return "#9e9e9e"
+
+cols = st.columns(4)
+for col, (label, cur, tgt, unit) in zip(cols, micro_items):
+    color = _micro_color(cur, tgt)
+    col.markdown(
+        f"<div style='text-align:center; font-size:0.75rem; color:#888;'>{label}</div>"
+        f"<div style='text-align:center; font-size:1rem; font-weight:bold; color:{color};'>{cur:.1f}</div>"
+        f"<div style='text-align:center; font-size:0.7rem; color:#aaa;'>/{tgt}{unit}</div>",
+        unsafe_allow_html=True,
+    )
 
 # --- AIアドバイス（一時無効化） ---
 # if "advice_cache" not in st.session_state:

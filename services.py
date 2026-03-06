@@ -43,29 +43,34 @@ def get_available_gemini_models():
 
 
 def analyze_meal_with_gemini(text, model_name="gemini-3-flash"):
-    """GeminiでPFCとカロリーを解析"""
+    """GeminiでPFC・カロリー・主要ビタミン/ミネラルを解析"""
     if len(text) < 2:
         return None
     try:
         model = genai.GenerativeModel(model_name)
         prompt = f"""
-        あなたは栄養管理AIです。以下の食事内容から、カロリー、タンパク質(P)、脂質(F)、炭水化物(C)を推測してください。
-        
+        あなたは栄養管理AIです。以下の食事内容から、カロリー、タンパク質(P)、脂質(F)、炭水化物(C)、
+        鉄(iron_mg)、葉酸(folate_ug)、カルシウム(calcium_mg)、ビタミンD(vitamin_d_ug)を推測してください。
+
         食事内容: "{text}"
-        
+
         回答は以下のJSON形式のみで出力してください（マークダウン不要）:
-        {{"cal": int, "p": int, "f": int, "c": int}}
-        例: {{"cal": 500, "p": 20, "f": 15, "c": 60}}
+        {{"cal": int, "p": int, "f": int, "c": int, "iron_mg": float, "folate_ug": float, "calcium_mg": float, "vitamin_d_ug": float}}
+        例: {{"cal": 500, "p": 20, "f": 15, "c": 60, "iron_mg": 2.5, "folate_ug": 80.0, "calcium_mg": 150.0, "vitamin_d_ug": 3.0}}
         """
         res = model.generate_content(prompt)
         json_str = res.text.strip().replace("```json", "").replace("```", "")
         data = json.loads(json_str)
-        return data.get("p", 0), data.get("f", 0), data.get("c", 0), data.get("cal", 0)
+        return (
+            data.get("p", 0), data.get("f", 0), data.get("c", 0), data.get("cal", 0),
+            data.get("iron_mg", 0), data.get("folate_ug", 0),
+            data.get("calcium_mg", 0), data.get("vitamin_d_ug", 0),
+        )
     except Exception as e:
         # 画面上にデバッグ用のエラー内容を表示
         st.error(f"Error: {type(e).__name__} - {str(e)}")
-        
-        return None        
+
+        return None
 
 def analyze_meal_with_advice(text, model_name, profile, logged_meals, totals, targets, meal_type):
     """GeminiでPFC解析とアドバイスを1回のAPI呼び出しで同時に取得する"""
@@ -270,15 +275,25 @@ def update_user_profile(supabase, user_id, updates):
 
 # --- DB操作: meal_logs ---
 
-def save_meal_log(supabase, user_id, meal_date, meal_type, text, p, f, c, cal):
+def save_meal_log(supabase, user_id, meal_date, meal_type, text, p, f, c, cal,
+                  iron_mg=None, folate_ug=None, calcium_mg=None, vitamin_d_ug=None):
     """食事ログをDBに保存"""
-    supabase.table("meal_logs").insert({
+    row = {
         "user_id": user_id,
         "meal_date": meal_date.isoformat(),
         "meal_type": meal_type,
         "food_name": text,
-        "p_val": round(p), "f_val": round(f), "c_val": round(c), "calories": round(cal)
-    }).execute()
+        "p_val": round(p), "f_val": round(f), "c_val": round(c), "calories": round(cal),
+    }
+    if iron_mg is not None:
+        row["iron_mg"] = round(iron_mg, 1)
+    if folate_ug is not None:
+        row["folate_ug"] = round(folate_ug, 1)
+    if calcium_mg is not None:
+        row["calcium_mg"] = round(calcium_mg, 1)
+    if vitamin_d_ug is not None:
+        row["vitamin_d_ug"] = round(vitamin_d_ug, 1)
+    supabase.table("meal_logs").insert(row).execute()
 
 
 def get_meal_logs(supabase, user_id, date_str):
