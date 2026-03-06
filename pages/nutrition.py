@@ -69,6 +69,8 @@ def _highlight_pf(row):
     cols = list(row.index)
     if row["F(g)"] >= 20:
         styles[cols.index("F(g)")] = "background-color: #ffb3ba"
+    elif row["F(g)"] <= 5:
+        styles[cols.index("F(g)")] = "background-color: #c8f5c8"
     p_col = "P(g)▼" if "P(g)▼" in cols else "P(g)"
     if row[p_col] >= 20:
         styles[cols.index(p_col)] = "background-color: #c8f5c8"
