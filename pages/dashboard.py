@@ -138,95 +138,56 @@ def create_calorie_chart(df, target_cal):
     return fig
 
 
-def create_pfc_chart(df, target_p=0, target_f=0):
+def create_nutrient_chart(df, key, label, bar_color, line_color, target=0):
+    """P・F・C それぞれ個別のグラフを生成する共通関数"""
     fig = go.Figure()
-    colors = {"protein": "rgba(0,172,193,0.45)", "fat": "rgba(255,82,82,0.45)", "carb": "rgba(85,85,85,0.35)"}
-    names = {"protein": "タンパク質", "fat": "脂質", "carb": "炭水化物"}
-    for key in ["protein", "fat", "carb"]:
-        fig.add_trace(go.Bar(
-            x=df["label"], y=df[key],
-            marker_color=colors[key], name=names[key], marker_line_width=0,
-        ))
-    # P・F平均ライン
+    fig.add_trace(go.Bar(
+        x=df["label"], y=df[key],
+        marker_color=bar_color, name=label, marker_line_width=0,
+    ))
     df_active = df[df["meal_count"] > 0]
     if len(df_active) > 0:
         if len(df) > 14:
-            # 30日間: 7日間移動平均（記録なし日は NaN 扱い）
-            p_series = df["protein"].replace(0, float("nan")).where(df["meal_count"] > 0)
-            f_series = df["fat"].replace(0, float("nan")).where(df["meal_count"] > 0)
-            p_ma = p_series.rolling(7, min_periods=1).mean()
-            f_ma = f_series.rolling(7, min_periods=1).mean()
+            series = df[key].replace(0, float("nan")).where(df["meal_count"] > 0)
+            ma = series.rolling(7, min_periods=1).mean()
             fig.add_trace(go.Scatter(
-                x=df["label"], y=p_ma,
-                mode="lines", line=dict(color=TEAL, width=2.5),
-                name="P移動平均(7日)", connectgaps=True,
-            ))
-            fig.add_trace(go.Scatter(
-                x=df["label"], y=f_ma,
-                mode="lines", line=dict(color=PINK, width=2.5),
-                name="F移動平均(7日)", connectgaps=True,
+                x=df["label"], y=ma,
+                mode="lines", line=dict(color=line_color, width=2.5),
+                name="移動平均(7日)", connectgaps=True,
             ))
         elif len(df) > 7:
-            # 14日間: 3日間移動平均
-            p_series = df["protein"].replace(0, float("nan")).where(df["meal_count"] > 0)
-            f_series = df["fat"].replace(0, float("nan")).where(df["meal_count"] > 0)
-            p_ma = p_series.rolling(3, min_periods=1).mean()
-            f_ma = f_series.rolling(3, min_periods=1).mean()
+            series = df[key].replace(0, float("nan")).where(df["meal_count"] > 0)
+            ma = series.rolling(3, min_periods=1).mean()
             fig.add_trace(go.Scatter(
-                x=df["label"], y=p_ma,
-                mode="lines", line=dict(color=TEAL, width=2.5),
-                name="P移動平均(3日)", connectgaps=True,
-            ))
-            fig.add_trace(go.Scatter(
-                x=df["label"], y=f_ma,
-                mode="lines", line=dict(color=PINK, width=2.5),
-                name="F移動平均(3日)", connectgaps=True,
+                x=df["label"], y=ma,
+                mode="lines", line=dict(color=line_color, width=2.5),
+                name="移動平均(3日)", connectgaps=True,
             ))
         else:
-            # 7日間: 期間全体の平均を実線
-            avg_p = df_active["protein"].mean()
+            avg_val = df_active[key].mean()
             fig.add_hline(
-                y=avg_p, line_dash="solid", line_color=TEAL, line_width=2,
-                annotation_text=f"P平均 {int(avg_p)}g",
+                y=avg_val, line_dash="solid", line_color=line_color, line_width=2,
+                annotation_text=f"平均 {int(avg_val)}g",
                 annotation_position="top right",
                 annotation_font=dict(color=BLACK, size=10),
             )
-            avg_f = df_active["fat"].mean()
-            fig.add_hline(
-                y=avg_f, line_dash="solid", line_color=PINK, line_width=2,
-                annotation_text=f"F平均 {int(avg_f)}g",
-                annotation_position="bottom right",
-                annotation_font=dict(color=BLACK, size=10),
-            )
-    # P目標（塗りつぶし + 境界線）
-    if target_p > 0:
-        fig.add_hrect(y0=0, y1=target_p,
-                      fillcolor="rgba(0,172,193,0.10)", line_width=0, layer="below")
+    if target > 0:
+        fig.add_hrect(y0=0, y1=target, fillcolor=bar_color.replace("0.45", "0.10").replace("0.35", "0.10"),
+                      line_width=0, layer="below")
         fig.add_hline(
-            y=target_p, line_dash="solid",
-            line_color="rgba(0,172,193,0.5)", line_width=1,
-            annotation_text=f"P目標 {target_p}g",
+            y=target, line_dash="solid",
+            line_color=line_color, line_width=1,
+            annotation_text=f"目標 {target}g",
             annotation_position="top left",
             annotation_font=dict(color=BLACK, size=11),
         )
-    # F目標（塗りつぶし + 境界線）
-    if target_f > 0:
-        fig.add_hrect(y0=0, y1=target_f,
-                      fillcolor="rgba(255,82,82,0.10)", line_width=0, layer="below")
-        fig.add_hline(
-            y=target_f, line_dash="solid",
-            line_color="rgba(255,82,82,0.5)", line_width=1,
-            annotation_text=f"F目標 {target_f}g",
-            annotation_position="bottom left",
-            annotation_font=dict(color=BLACK, size=11),
-        )
     fig.update_layout(
-        height=260, margin=dict(l=10, r=10, t=30, b=10),
+        height=180, margin=dict(l=10, r=10, t=30, b=10),
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(tickfont=AXIS_FONT),
         yaxis=dict(gridcolor=GRID_COLOR, tickfont=AXIS_FONT),
+        showlegend=len(df) > 7,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5, font=dict(size=11, color=BLACK)),
-        barmode="group",
     )
     return fig
 
@@ -269,10 +230,23 @@ avg_c = int(df_active["carb"].mean()) if days_with_data > 0 else 0
 
 st.caption(f"{days_with_data}日間のデータ · {total_meals}食記録 · 平均 {avg_cal:,} kcal/日  \n（P:{avg_p}g F:{avg_f}g C:{avg_c}g）")
 
-# --- PFC推移 ---
-st.subheader("🏋️ PFCバランス推移 (g)")
-st.plotly_chart(create_pfc_chart(df, target_p, target_f),
-                use_container_width=True, config={"staticPlot": True})
+# --- PFC推移（個別グラフ） ---
+st.subheader("🏋️ PFC推移 (g)")
+st.caption("タンパク質 (P)")
+st.plotly_chart(
+    create_nutrient_chart(df, "protein", "タンパク質", "rgba(0,172,193,0.45)", TEAL, target_p),
+    use_container_width=True, config={"staticPlot": True},
+)
+st.caption("脂質 (F)")
+st.plotly_chart(
+    create_nutrient_chart(df, "fat", "脂質", "rgba(255,82,82,0.45)", PINK, target_f),
+    use_container_width=True, config={"staticPlot": True},
+)
+st.caption("炭水化物 (C)")
+st.plotly_chart(
+    create_nutrient_chart(df, "carb", "炭水化物", "rgba(85,85,85,0.35)", GREY_DARK, target_c),
+    use_container_width=True, config={"staticPlot": True},
+)
 
 # --- カロリー推移 ---
 st.subheader("🔥 日次カロリー推移")
