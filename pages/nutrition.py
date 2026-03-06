@@ -69,8 +69,9 @@ def _highlight_pf(row):
     cols = list(row.index)
     if row["F(g)"] >= 20:
         styles[cols.index("F(g)")] = "background-color: #ffb3ba"
-    if row["P(g)"] >= 20:
-        styles[cols.index("P(g)")] = "background-color: #c8f5c8"
+    p_col = "P(g)▲" if "P(g)▲" in cols else "P(g)"
+    if row[p_col] >= 20:
+        styles[cols.index(p_col)] = "background-color: #c8f5c8"
     return styles
 
 
@@ -82,10 +83,15 @@ for cat in CATEGORIES:
                 cat["items"],
                 columns=["食品名", "目安量", "kcal", "P(g)", "F(g)", "C(g)"],
             )
-            fmt = {"kcal": "{:.1f}", "P(g)": "{:.1f}", "F(g)": "{:.1f}", "C(g)": "{:.1f}"}
             row_height = 35
             header_height = 38
             tbl_height = len(df) * row_height + header_height
+            if "メイン" in cat["title"] or "タンパク源" in cat["title"]:
+                df = df.rename(columns={"P(g)": "P(g)▲"})
+                fmt = {"kcal": "{:.1f}", "P(g)▲": "{:.1f}", "F(g)": "{:.1f}", "C(g)": "{:.1f}"}
+            else:
+                df = df.rename(columns={"kcal": "kcal▼"})
+                fmt = {"kcal▼": "{:.1f}", "P(g)": "{:.1f}", "F(g)": "{:.1f}", "C(g)": "{:.1f}"}
             if "メイン" in cat["title"]:
                 st.dataframe(
                     df.style.apply(_highlight_pf, axis=1).format(fmt),
