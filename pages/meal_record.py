@@ -15,7 +15,8 @@ from services import (
     analyze_meal_with_gemini,
     get_user_profile,
     save_meal_log, get_meal_logs, delete_meal_log,
-    generate_meal_advice, generate_pfc_summary,
+    # generate_meal_advice,  # アドバイス機能を一時無効化
+    generate_pfc_summary,
     get_meal_templates, delete_meal_template,
 )
 from charts import create_summary_chart
@@ -157,7 +158,7 @@ with st.expander("📋 テンプレートから登録"):
                 tpl["food_name"],
                 tpl["p_val"], tpl["f_val"], tpl["c_val"], tpl["calories"],
             )
-            st.session_state["advice_needs_refresh"] = True
+            # st.session_state["advice_needs_refresh"] = True  # アドバイス機能を一時無効化
             st.toast(f"✅ {tpl['name']} を登録しました！")
             st.rerun()
     else:
@@ -173,7 +174,7 @@ with st.form("meal_input"):
         if result:
             p, f, c, cal = result
             save_meal_log(supabase, user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal)
-            st.session_state["advice_needs_refresh"] = True
+            # st.session_state["advice_needs_refresh"] = True  # アドバイス機能を一時無効化
             st.toast(f"✅ 記録しました！ {cal}kcal")
             st.rerun()
 
@@ -208,64 +209,64 @@ logged_meals = logs.data if logs and logs.data else []
 summary_line = generate_pfc_summary(totals, targets)
 st.markdown(f"<p style='font-size:1.1rem; font-weight:bold; margin:0.2rem 0;'>{summary_line}</p>", unsafe_allow_html=True)
 
-# --- AIアドバイス ---
-if "advice_cache" not in st.session_state:
-    st.session_state["advice_cache"] = {}
-
-ADVICE_ERROR_COOLDOWN = 60
-advice_error_key = "advice_error_until"
-current_time = time.time()
-error_until = st.session_state.get(advice_error_key, 0)
-
-cache_key = current_date_str
-needs_refresh = st.session_state.get("advice_needs_refresh", False)
-has_cache = cache_key in st.session_state["advice_cache"]
-
-advice_text = None
-error_msg = None
-
-if current_time < error_until:
-    remaining = int(error_until - current_time)
-    st.warning(f"⚠️ AIが混み合っています。{remaining}秒後に再試行してください。")
-else:
-    if needs_refresh:
-        with st.spinner("🏋️ アドバイスを考え中..."):
-            try:
-                profile_d = {
-                    "likes": profile.get("likes") or "",
-                    "dislikes": profile.get("dislikes") or "",
-                    "preferences": profile.get("preferences") or "",
-                }
-                advice_text = generate_meal_advice(
-                    selected_model, profile_d, logged_meals, totals, targets
-                )
-                st.session_state["advice_cache"][cache_key] = advice_text
-                st.session_state["advice_needs_refresh"] = False
-                if advice_error_key in st.session_state:
-                    del st.session_state[advice_error_key]
-            except Exception as e:
-                error_msg = str(e)
-                st.session_state[advice_error_key] = current_time + ADVICE_ERROR_COOLDOWN
-                st.session_state["advice_needs_refresh"] = False
-                if "429" in error_msg:
-                    st.warning("⚠️ AIの利用制限に達しました。日本時間の17時以降に再試行してください。")
-                else:
-                    st.warning("⚠️ AIアドバイスを取得できませんでした")
-    elif has_cache:
-        advice_text = st.session_state["advice_cache"].get(cache_key)
-
-is_cooldown = current_time < error_until
-if advice_text:
-    st.subheader("💡 AIアドバイス")
-    formatted = advice_text.replace("\n", "  \n")
-    st.markdown(formatted)
-    if st.button("🔄 アドバイスを再取得", disabled=is_cooldown):
-        st.session_state["advice_needs_refresh"] = True
-        st.rerun()
-elif error_msg is None and not is_cooldown:
-    if st.button("AIアドバイスを取得"):
-        st.session_state["advice_needs_refresh"] = True
-        st.rerun()
+# --- AIアドバイス（一時無効化） ---
+# if "advice_cache" not in st.session_state:
+#     st.session_state["advice_cache"] = {}
+#
+# ADVICE_ERROR_COOLDOWN = 60
+# advice_error_key = "advice_error_until"
+# current_time = time.time()
+# error_until = st.session_state.get(advice_error_key, 0)
+#
+# cache_key = current_date_str
+# needs_refresh = st.session_state.get("advice_needs_refresh", False)
+# has_cache = cache_key in st.session_state["advice_cache"]
+#
+# advice_text = None
+# error_msg = None
+#
+# if current_time < error_until:
+#     remaining = int(error_until - current_time)
+#     st.warning(f"⚠️ AIが混み合っています。{remaining}秒後に再試行してください。")
+# else:
+#     if needs_refresh:
+#         with st.spinner("🏋️ アドバイスを考え中..."):
+#             try:
+#                 profile_d = {
+#                     "likes": profile.get("likes") or "",
+#                     "dislikes": profile.get("dislikes") or "",
+#                     "preferences": profile.get("preferences") or "",
+#                 }
+#                 advice_text = generate_meal_advice(
+#                     selected_model, profile_d, logged_meals, totals, targets
+#                 )
+#                 st.session_state["advice_cache"][cache_key] = advice_text
+#                 st.session_state["advice_needs_refresh"] = False
+#                 if advice_error_key in st.session_state:
+#                     del st.session_state[advice_error_key]
+#             except Exception as e:
+#                 error_msg = str(e)
+#                 st.session_state[advice_error_key] = current_time + ADVICE_ERROR_COOLDOWN
+#                 st.session_state["advice_needs_refresh"] = False
+#                 if "429" in error_msg:
+#                     st.warning("⚠️ AIの利用制限に達しました。日本時間の17時以降に再試行してください。")
+#                 else:
+#                     st.warning("⚠️ AIアドバイスを取得できませんでした")
+#     elif has_cache:
+#         advice_text = st.session_state["advice_cache"].get(cache_key)
+#
+# is_cooldown = current_time < error_until
+# if advice_text:
+#     st.subheader("💡 AIアドバイス")
+#     formatted = advice_text.replace("\n", "  \n")
+#     st.markdown(formatted)
+#     if st.button("🔄 アドバイスを再取得", disabled=is_cooldown):
+#         st.session_state["advice_needs_refresh"] = True
+#         st.rerun()
+# elif error_msg is None and not is_cooldown:
+#     if st.button("AIアドバイスを取得"):
+#         st.session_state["advice_needs_refresh"] = True
+#         st.rerun()
 
 # --- 履歴 ---
 MEAL_ORDER = {"朝食": 0, "昼食": 1, "夕食": 2, "間食": 3}

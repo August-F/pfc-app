@@ -198,88 +198,53 @@ def generate_pfc_summary(totals, targets):
         return f"🔥 {abs(int(rem_cal))}kcalオーバー！（P: {fmt_p}g / F: {fmt_f}g / C: {fmt_c}g）"
 
 
-def generate_meal_advice(model_name, profile, logged_meals, totals, targets):
-    """Geminiで残りの食事アドバイスを生成"""
-    rem_cal = targets["cal"] - totals["cal"]
-    rem_p = targets["p"] - totals["p"]
-    rem_f = targets["f"] - totals["f"]
-    rem_c = targets["c"] - totals["c"]
-
-    # 記録済みのタイミングを取得
-    logged_types = set(m["meal_type"] for m in logged_meals) if logged_meals else set()
-    all_types = ["朝食", "昼食", "夕食", "間食"]
-    remaining_types = [t for t in all_types if t not in logged_types]
-
-    if not remaining_types:
-        remaining_str = "本日の食事は全て記録済みです"
-    else:
-        remaining_str = "、".join(remaining_types) + " がまだ未記録です"
-
-    likes = profile.get("likes") or "特になし"
-    dislikes = profile.get("dislikes") or "特になし"
-    prefs = profile.get("preferences") or "特になし"
-
-    # 記録済みの食事内容をテキスト化
-    if logged_meals:
-        meals_detail = "\n".join(
-            f"・{m['meal_type']}: {m['food_name']}（{m['calories']}kcal / P:{m['p_val']}g F:{m['f_val']}g C:{m['c_val']}g）"
-            for m in logged_meals
-        )
-    else:
-        meals_detail = "まだ記録なし"
-
-    # +/-表記の準備（+は超過、-は不足）
-    def fmt(val):
-        if val <= 0:
-            return f"+{abs(int(val))}"
-        else:
-            return f"-{int(val)}"
-    fmt_p = fmt(rem_p)
-    fmt_f = fmt(rem_f)
-    fmt_c = fmt(rem_c)
-
-    try:
-        model = genai.GenerativeModel(model_name)
-        prompt = f"""あなたはマッチョなパーソナルトレーナーのキャラクターです。
-以下のルールを必ず守ってください:
-- 必ず💪🏋️‍♀️🔥などの絵文字を毎回複数使う
-- 必ずですます調で話す
-- 明るくポジティブに励ます
-
-以下の情報をもとに、食事アドバイスをしてください。
-
-■ 本日の記録
-{meals_detail}
-
-■ 目標との差（+は超過、-は不足）
-カロリー: {fmt(rem_cal)} kcal / P: {fmt_p}g / F: {fmt_f}g / C: {fmt_c}g
-
-■ 食事状況
-{remaining_str}
-
-■ ユーザーの好み
-好きな食べ物: {likes}
-苦手な食べ物: {dislikes}
-その他要望: {prefs}
-
-■ 出力ルール
-- 超過している項目がある場合: 記録済みの食事内容に触れながら「○○は△△が豊富ですが□□も高めなので…」のように原因を具体的に説明し、「明日は○○など、□□ひかえめな食材で調整しましょう💪」と提案する
-- 不足している場合: 未記録の食事タイミングごとに具体的なメニューを1〜2品提案する
-- 全て記録済みで超過なしの場合: 全体の振り返りを一言で褒める
-- 提案は好きな食べ物に限定せず、PFCバランスに合う一般的なメニューを幅広く提案してよい
-- ただし苦手な食べ物は必ず避けること
-- 全体で80文字〜150文字程度に収める
-- マークダウン記法は使わない（絵文字はOK。💪🏋️‍♀️🔥を積極的に使う）
-- カロリーやPFCの数値は別途表示されるため、アドバイスには含めない
-"""
-        res = model.generate_content(prompt)
-        return res.text.strip()
-    except Exception as e:
-        error_msg = str(e)
-        print(f"[AI Advice Error] {error_msg}")
-        # 429エラー（レート制限）の場合は、そのままraiseして呼び出し元で処理
-        # キャッシュされないようにするため、例外をそのまま投げる
-        raise
+# --- generate_meal_advice は一時無効化 ---
+# def generate_meal_advice(model_name, profile, logged_meals, totals, targets):
+#     """Geminiで残りの食事アドバイスを生成"""
+#     rem_cal = targets["cal"] - totals["cal"]
+#     rem_p = targets["p"] - totals["p"]
+#     rem_f = targets["f"] - totals["f"]
+#     rem_c = targets["c"] - totals["c"]
+#
+#     logged_types = set(m["meal_type"] for m in logged_meals) if logged_meals else set()
+#     all_types = ["朝食", "昼食", "夕食", "間食"]
+#     remaining_types = [t for t in all_types if t not in logged_types]
+#
+#     if not remaining_types:
+#         remaining_str = "本日の食事は全て記録済みです"
+#     else:
+#         remaining_str = "、".join(remaining_types) + " がまだ未記録です"
+#
+#     likes = profile.get("likes") or "特になし"
+#     dislikes = profile.get("dislikes") or "特になし"
+#     prefs = profile.get("preferences") or "特になし"
+#
+#     if logged_meals:
+#         meals_detail = "\n".join(
+#             f"・{m['meal_type']}: {m['food_name']}（{m['calories']}kcal / P:{m['p_val']}g F:{m['f_val']}g C:{m['c_val']}g）"
+#             for m in logged_meals
+#         )
+#     else:
+#         meals_detail = "まだ記録なし"
+#
+#     def fmt(val):
+#         if val <= 0:
+#             return f"+{abs(int(val))}"
+#         else:
+#             return f"-{int(val)}"
+#     fmt_p = fmt(rem_p)
+#     fmt_f = fmt(rem_f)
+#     fmt_c = fmt(rem_c)
+#
+#     try:
+#         model = genai.GenerativeModel(model_name)
+#         prompt = f"""...(省略)..."""
+#         res = model.generate_content(prompt)
+#         return res.text.strip()
+#     except Exception as e:
+#         error_msg = str(e)
+#         print(f"[AI Advice Error] {error_msg}")
+#         raise
 
 
 # --- DB操作: profiles ---
