@@ -63,18 +63,18 @@ pfc-app/
 ### 1. 依存パッケージのインストール
 
 ```bash
-pip install -r requirements.txt
+pip install -r src/requirements.txt
 ```
 
 開発・テスト環境の場合は追加でインストール：
 
 ```bash
-pip install -r requirements-dev.txt
+pip install -r src/requirements-dev.txt
 ```
 
 ### 2. Streamlit Secrets の設定
 
-`.streamlit/secrets.toml` を作成し、以下を記入してください。
+`src/.streamlit/secrets.toml` を作成し、以下を記入してください。
 
 ```toml
 [supabase]
@@ -91,13 +91,13 @@ api_key = "your-gemini-api-key"
 ### 3. アプリの起動
 
 ```bash
-streamlit run app.py
+streamlit run src/app.py
 ```
 
 ### 4. テストの実行
 
 ```bash
-pytest tests/
+cd src && pytest tests/
 ```
 
 
