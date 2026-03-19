@@ -5,6 +5,7 @@
 食事内容をテキスト入力するだけでAIがPFC（タンパク質・脂質・炭水化物）とカロリーを自動解析・記録するWebアプリ。
 
 - **フレームワーク：** Streamlit
+- **ホスティング：** Streamlit Cloud（`src/app.py` をエントリーポイントに設定）
 - **データベース / 認証：** Supabase（フリープラン）
 - **AI解析：** Google Gemini API
 - **グラフ：** Plotly
@@ -52,7 +53,8 @@ pfc-app/
 
 ## 開発ルール
 
-- シークレットは `src/.streamlit/secrets.toml` で管理（絶対にコミットしない）
+- シークレットは **Streamlit Cloud の Secrets** で管理（ローカル開発時のみ `src/.streamlit/secrets.toml` を使用）
+- `src/.streamlit/secrets.toml` は gitignore 対象のため、リポジトリには存在しない
 - テストは `src/tests/` に追加する
 - Supabase接続情報は `src/config.py` 経由で取得する
 - コマンドはリポジトリルートから実行する（例: `streamlit run src/app.py`、`cd src && pytest tests/`）

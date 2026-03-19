@@ -52,55 +52,64 @@ pfc-app/
 │   ├── pytest.ini          # pytest設定
 │   ├── requirements.txt    # 本番依存パッケージ
 │   └── requirements-dev.txt # 開発依存パッケージ（pytest等）
-└── 設計メモ/               # 設計ドキュメント（gitignore対象）
+└── docs/                   # 設計ドキュメント
 ```
 
 > ページルーティングには [Streamlit推奨の `st.navigation`](https://docs.streamlit.io/develop/concepts/multipage-apps/overview) を使用しています。
 
 
-## セットアップ
+## デプロイ（Streamlit Cloud）
 
-### 1. 依存パッケージのインストール
+本アプリは [Streamlit Cloud](https://streamlit.io/cloud) で運用しています。
 
-```bash
-pip install -r src/requirements.txt
-```
+### 1. Secrets の設定
 
-開発・テスト環境の場合は追加でインストール：
-
-```bash
-pip install -r src/requirements-dev.txt
-```
-
-### 2. Streamlit Secrets の設定
-
-`src/.streamlit/` ディレクトリを作成し、`secrets.toml` を配置してください（gitignore対象のため、各環境でローカルに作成が必要です）。
-
-```bash
-mkdir src/.streamlit
-```
-
-`src/.streamlit/secrets.toml` に以下を記入してください。
+Streamlit Cloud のアプリ設定画面（Settings → Secrets）に以下を登録してください。
 
 ```toml
 [supabase]
 url = "https://xxxxx.supabase.co"
-key = "your-anon-key"           # anon key（fallback）
+key = "your-anon-key"                  # anon key（fallback）
 service_key = "your-service-role-key"  # service_role key（実際に使用）
 
 [gemini]
 api_key = "your-gemini-api-key"
 ```
 
-> **service_role key について：** 全テーブルでRLS（Row Level Security）が有効なため、サーバーサイドで動作するStreamlitアプリはservice_role keyを使用してRLSをバイパスします。このキーはStreamlit CloudのSecretsにのみ保存し、コードやGitHubには含めないでください。
+> **service_role key について：** 全テーブルでRLS（Row Level Security）が有効なため、service_role keyでRLSをバイパスしています。Streamlit はサーバーサイド実行のため、このキーがブラウザに露出することはありません。コードやGitHubには含めないでください。
 
-### 3. アプリの起動
+### 2. Main file の設定
+
+Streamlit Cloud のデプロイ設定で Main file path を以下に設定してください。
+
+```
+src/app.py
+```
+
+
+## ローカル開発
+
+### 依存パッケージのインストール
+
+```bash
+pip install -r src/requirements-dev.txt
+```
+
+### Secrets の設定
+
+```bash
+mkdir src/.streamlit
+```
+
+`src/.streamlit/secrets.toml` を作成し、上記と同じ内容を記入してください（gitignore対象）。
+
+### アプリの起動
 
 ```bash
 streamlit run src/app.py
 ```
 
-### 4. テストの実行
+### テストの実行
 
 ```bash
 cd src && pytest tests/
