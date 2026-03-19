@@ -1,18 +1,30 @@
-# Pythonのキャッシュ
-__pycache__/
-*.py[cod]
+# 機密情報・メモ
+設計メモ/
 
-# 仮想環境
+# 環境変数
+.env
+*.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
 .venv/
-env/
 venv/
 
-# Streamlitのログや設定
-.streamlit/
+# Streamlit
+.streamlit/secrets.toml
 
-# OSのゴミファイル
-.DS_Store
+# Windows
 Thumbs.db
+desktop.ini
 
-# Claude Code local settings
+# VS Code
+.vscode/
+
+# Claude Code
 .claude/
+
+# 一時ファイル
+*.bak
+*.tmp
