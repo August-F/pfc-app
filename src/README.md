@@ -74,7 +74,13 @@ pip install -r src/requirements-dev.txt
 
 ### 2. Streamlit Secrets の設定
 
-`src/.streamlit/secrets.toml` を作成し、以下を記入してください。
+`src/.streamlit/` ディレクトリを作成し、`secrets.toml` を配置してください（gitignore対象のため、各環境でローカルに作成が必要です）。
+
+```bash
+mkdir src/.streamlit
+```
+
+`src/.streamlit/secrets.toml` に以下を記入してください。
 
 ```toml
 [supabase]
