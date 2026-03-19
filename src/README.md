@@ -28,26 +28,31 @@
 
 ```
 pfc-app/
-├── app.py                  # エントリーポイント（共通設定 + st.navigation）
-├── pages/
-│   ├── meal_record.py      # 🍽️ 食事記録ページ（メイン）
-│   ├── dashboard.py        # 📊 PFCダッシュボード（日次推移グラフ）
-│   ├── nutrition.py        # 🥗 栄養成分リファレンス
-│   └── settings.py         # ⚙️ 設定（目標・モデル・テンプレート管理）
-├── auth.py                 # ログイン・新規登録画面
-├── config.py               # Supabase・Gemini APIの初期化
-├── services.py             # DB操作（profile / meal_logs / templates）+ Gemini解析
-├── charts.py               # 達成率グラフの描画
-├── bg.png                  # 背景画像
-├── tests/
-│   ├── conftest.py         # pytest共通設定
-│   ├── test_services.py    # services.pyのユニットテスト
-│   └── test_charts.py      # charts.pyのユニットテスト
-├── hooks/
-│   └── pre-commit          # Git pre-commitフック
-├── pytest.ini              # pytest設定
-├── requirements.txt        # 本番依存パッケージ
-└── requirements-dev.txt    # 開発依存パッケージ（pytest等）
+├── .github/
+│   └── workflows/
+│       └── test.yml        # CI（GitHub Actions）
+├── src/
+│   ├── app.py              # エントリーポイント（共通設定 + st.navigation）
+│   ├── pages/
+│   │   ├── meal_record.py  # 🍽️ 食事記録ページ（メイン）
+│   │   ├── dashboard.py    # 📊 PFCダッシュボード（日次推移グラフ）
+│   │   ├── nutrition.py    # 🥗 栄養成分リファレンス
+│   │   └── settings.py     # ⚙️ 設定（目標・モデル・テンプレート管理）
+│   ├── auth.py             # ログイン・新規登録画面
+│   ├── config.py           # Supabase・Gemini APIの初期化
+│   ├── services.py         # DB操作（profile / meal_logs / templates）+ Gemini解析
+│   ├── charts.py           # 達成率グラフの描画
+│   ├── bg.png              # 背景画像
+│   ├── tests/
+│   │   ├── conftest.py     # pytest共通設定
+│   │   ├── test_services.py # services.pyのユニットテスト
+│   │   └── test_charts.py  # charts.pyのユニットテスト
+│   ├── hooks/
+│   │   └── pre-commit      # Git pre-commitフック
+│   ├── pytest.ini          # pytest設定
+│   ├── requirements.txt    # 本番依存パッケージ
+│   └── requirements-dev.txt # 開発依存パッケージ（pytest等）
+└── 設計メモ/               # 設計ドキュメント（gitignore対象）
 ```
 
 > ページルーティングには [Streamlit推奨の `st.navigation`](https://docs.streamlit.io/develop/concepts/multipage-apps/overview) を使用しています。

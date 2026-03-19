@@ -14,19 +14,21 @@
 ```
 pfc-app/
 ├── CLAUDE.md
-├── app-code/
-│   └── pfc-app/
-│       ├── app.py              ← エントリーポイント
-│       ├── auth.py             ← 認証
-│       ├── config.py           ← Supabase・Gemini設定
-│       ├── charts.py           ← グラフ描画
-│       ├── services.py         ← ビジネスロジック
-│       ├── pages/              ← 各ページ
-│       ├── hooks/              ← カスタムフック
-│       ├── tests/              ← テスト
-│       ├── requirements.txt
-│       └── requirements-dev.txt
-└── memo_GitHubに上げない/      ← 機密メモ（gitignore対象）
+├── .github/
+│   └── workflows/
+│       └── test.yml            ← CI（GitHub Actions）
+├── src/
+│   ├── app.py              ← エントリーポイント
+│   ├── auth.py             ← 認証
+│   ├── config.py           ← Supabase・Gemini設定
+│   ├── charts.py           ← グラフ描画
+│   ├── services.py         ← ビジネスロジック
+│   ├── pages/              ← 各ページ
+│   ├── hooks/              ← カスタムフック
+│   ├── tests/              ← テスト
+│   ├── requirements.txt
+│   └── requirements-dev.txt
+└── 設計メモ/               ← 設計ドキュメント（gitignore対象）
 ```
 
 ## 主な機能
@@ -46,6 +48,6 @@ pfc-app/
 ## Claudeへの指示
 
 - コードを変更する前に必ず該当ファイルを読むこと
-- `memo_GitHubに上げない/` フォルダは読み込み・編集しないこと
+- `設計メモ/` フォルダは読み込み・編集しないこと
 - `.env` ファイルは絶対に読まない・編集しない
 - Gemini APIのプロンプトを変更する際は既存の出力フォーマットとの互換性を確認すること
