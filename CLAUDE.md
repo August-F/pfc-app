@@ -28,7 +28,7 @@ pfc-app/
 │   ├── tests/              ← テスト
 │   ├── requirements.txt
 │   └── requirements-dev.txt
-└── 設計メモ/               ← 設計ドキュメント（gitignore対象）
+└── docs/                   ← 設計ドキュメント（security_policy.md, performance_policy.md 等）
 ```
 
 ## 主な機能
@@ -60,6 +60,6 @@ pfc-app/
 ## Claudeへの指示
 
 - コードを変更する前に必ず該当ファイルを読むこと
-- `設計メモ/` フォルダは読み込み・編集しないこと
+- `docs/` フォルダは読み込み可。設計上の判断や背景をメモする必要があれば追記すること
 - `src/.streamlit/secrets.toml` は絶対に読まない・編集しない
 - Gemini APIのプロンプトを変更する際は既存の出力フォーマットとの互換性を確認すること
