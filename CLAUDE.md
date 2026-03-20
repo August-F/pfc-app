@@ -51,6 +51,17 @@ pfc-app/
 | `nutrition.py` | 栄養成分リファレンス |
 | `settings.py` | 目標・AIモデル・テンプレート管理 |
 
+## ローカル開発セットアップ
+
+main プッシュ前にテストを自動実行する pre-push hook を設定する（再クローン時も要設定）:
+
+```bash
+cp docs/pre-push.sh .git/hooks/pre-push
+chmod +x .git/hooks/pre-push
+```
+
+緊急時スキップ: `git push --no-verify`
+
 ## 開発ルール
 
 - シークレットは **Streamlit Cloud の Secrets** で管理（ローカル開発時のみ `src/.streamlit/secrets.toml` を使用）
