@@ -168,7 +168,8 @@ food_text = st.text_area("食べたもの", height=60, key="food_text", label_vi
 
 # ── 記録ボタン ──────────────────────────────────
 st.markdown("""<style>
-    .st-key-record_btn_area button {
+    .st-key-record_btn_area button,
+    .st-key-record_btn_area button p {
         background-color: #06C755 !important;
         color: white !important;
         border-color: #06C755 !important;
