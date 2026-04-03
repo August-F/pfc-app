@@ -81,7 +81,7 @@ def analyze_meal_with_advice(text, model_name, profile, logged_meals, totals, ta
     # 記録済みのタイミングを取得（今回の記録分も含める）
     logged_types = set(m["meal_type"] for m in logged_meals) if logged_meals else set()
     logged_types.add(meal_type)  # 今回記録する分を追加
-    all_types = ["朝食", "昼食", "夕食", "間食"]
+    all_types = ["朝食", "昼食", "夕食", "間食", "夜食"]
     remaining_types = [t for t in all_types if t not in logged_types]
 
     if not remaining_types:
@@ -212,7 +212,7 @@ def generate_pfc_summary(totals, targets):
 #     rem_c = targets["c"] - totals["c"]
 #
 #     logged_types = set(m["meal_type"] for m in logged_meals) if logged_meals else set()
-#     all_types = ["朝食", "昼食", "夕食", "間食"]
+#     all_types = ["朝食", "昼食", "夕食", "間食", "夜食"]
 #     remaining_types = [t for t in all_types if t not in logged_types]
 #
 #     if not remaining_types:

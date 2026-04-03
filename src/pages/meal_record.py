@@ -123,7 +123,7 @@ logs = get_meal_logs(supabase, user.id, current_date_str)
 st.subheader("食事を記録")
 
 # ── 食事タイプ ──────────────────────────────────
-meal_type = st.radio("食事タイプ", ["朝食", "昼食", "夕食", "間食"], horizontal=True, key="meal_type")
+meal_type = st.radio("食事タイプ", ["朝食", "昼食", "夕食", "間食", "夜食"], horizontal=True, key="meal_type")
 
 # ── 食べたもの ──────────────────────────────────
 st.markdown('<p style="font-size:14px; margin-bottom:0">食べたもの</p>', unsafe_allow_html=True)
@@ -352,7 +352,7 @@ st.markdown(micro_html, unsafe_allow_html=True)
 #         st.rerun()
 
 # --- 履歴 ---
-MEAL_ORDER = {"朝食": 0, "昼食": 1, "夕食": 2, "間食": 3}
+MEAL_ORDER = {"朝食": 0, "昼食": 1, "夕食": 2, "間食": 3, "夜食": 4}
 st.subheader("履歴")
 if logs and logs.data:
     sorted_logs = sorted(logs.data, key=lambda x: MEAL_ORDER.get(x["meal_type"], 9))

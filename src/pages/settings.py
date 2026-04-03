@@ -170,7 +170,7 @@ with st.form("tpl_add_form"):
         tpl_new_c   = st.number_input("炭水化物 C (g)", min_value=0.0, step=0.1)
     tpl_new_type = st.radio(
         "デフォルト食事タイプ（任意）",
-        ["なし", "朝食", "昼食", "夕食", "間食"],
+        ["なし", "朝食", "昼食", "夕食", "間食", "夜食"],
         horizontal=True,
     )
     if st.form_submit_button("➕ テンプレートを追加", use_container_width=True):
