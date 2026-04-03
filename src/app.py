@@ -3,7 +3,6 @@ import base64
 import pathlib as _pathlib
 from datetime import date
 
-import streamlit.components.v1 as components
 from config import get_supabase, init_gemini
 
 # --- ページ設定（必ず最初に1回だけ） ---
@@ -125,22 +124,18 @@ if "selected_model" not in st.session_state:
     st.session_state["selected_model"] = "gemini-flash-latest"
 
 # --- スワイプナビゲーション + ページインジケーター ---
-_SWIPE_NAV_HTML = """
+st.html("""
 <script>
 (function() {
-    var parent = window.parent;
-    var doc = parent.document;
-
     // ページ順序の定義
     var pages = ["/meal_record", "/dashboard", "/nutrition"];
 
     // 現在ページのインデックスを取得
     function getCurrentIndex() {
-        var path = parent.location.pathname;
+        var path = window.location.pathname;
         // デフォルトページ "/" は meal_record と同等
         if (path === "/" || path === "") return 0;
-        // パスからページ名を抽出（末尾スラッシュ除去）
-        var clean = path.replace(/\\/$/, "");
+        var clean = path.replace(/\/$/, "");
         for (var i = 0; i < pages.length; i++) {
             if (clean === pages[i]) return i;
         }
@@ -150,30 +145,29 @@ _SWIPE_NAV_HTML = """
     // --- ページインジケータードット ---
     function updateDots() {
         var idx = getCurrentIndex();
-        // 設定ページ等ではドットを非表示
-        var existing = doc.getElementById("pfc-page-dots");
+        var existing = document.getElementById("pfc-page-dots");
         if (existing) existing.remove();
         if (idx < 0) return;
 
-        var container = doc.createElement("div");
+        var container = document.createElement("div");
         container.id = "pfc-page-dots";
         container.style.cssText = "position:fixed;bottom:14px;left:50%;transform:translateX(-50%);"
             + "z-index:999999;display:flex;gap:8px;pointer-events:none;";
         for (var i = 0; i < pages.length; i++) {
-            var dot = doc.createElement("div");
+            var dot = document.createElement("div");
             dot.style.cssText = "width:8px;height:8px;border-radius:50%;transition:all 0.2s;"
                 + (i === idx
                     ? "background:#00ACC1;transform:scale(1.3);"
                     : "background:rgba(150,150,150,0.5);");
             container.appendChild(dot);
         }
-        doc.body.appendChild(container);
+        document.body.appendChild(container);
     }
     updateDots();
 
     // --- スワイプ検出 ---
-    if (parent.__pfc_swipe_initialized) return;
-    parent.__pfc_swipe_initialized = true;
+    if (window.__pfc_swipe_initialized) return;
+    window.__pfc_swipe_initialized = true;
 
     var startX = 0, startY = 0, startTime = 0;
     var THRESHOLD = 50;   // 最小スワイプ距離(px)
@@ -184,20 +178,19 @@ _SWIPE_NAV_HTML = """
         var tag = el.tagName;
         if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT"
             || tag === "BUTTON" || tag === "A" || tag === "CANVAS") return true;
-        // Streamlitのスライダー等
         if (el.closest && (el.closest('[data-testid="stSlider"]')
             || el.closest('[data-testid="stDataFrame"]'))) return true;
         return false;
     }
 
-    doc.addEventListener("touchstart", function(e) {
+    document.addEventListener("touchstart", function(e) {
         if (e.touches.length !== 1) return;
         startX = e.touches[0].clientX;
         startY = e.touches[0].clientY;
         startTime = Date.now();
     }, { passive: true });
 
-    doc.addEventListener("touchend", function(e) {
+    document.addEventListener("touchend", function(e) {
         if (e.changedTouches.length !== 1) return;
         if (shouldIgnore(e.target)) return;
 
@@ -205,23 +198,21 @@ _SWIPE_NAV_HTML = """
         var dy = e.changedTouches[0].clientY - startY;
         var elapsed = Date.now() - startTime;
 
-        // 縦スクロールとの区別、閾値・時間チェック
         if (Math.abs(dy) > Math.abs(dx)) return;
         if (Math.abs(dx) < THRESHOLD) return;
         if (elapsed > MAX_TIME) return;
 
         var idx = getCurrentIndex();
-        if (idx < 0) return; // 設定ページ等では無効
+        if (idx < 0) return;
 
         var nextIdx = dx < 0 ? idx + 1 : idx - 1;
         if (nextIdx < 0 || nextIdx >= pages.length) return;
 
-        parent.location.pathname = pages[nextIdx];
+        window.location.pathname = pages[nextIdx];
     }, { passive: true });
 })();
 </script>
-"""
-components.html(_SWIPE_NAV_HTML, height=0)
+""")
 
 # --- ページルーティング（Streamlit推奨方式 / グループ分け） ---
 pg = st.navigation({
