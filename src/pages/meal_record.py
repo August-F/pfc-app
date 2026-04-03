@@ -418,8 +418,7 @@ components.html(
         const label = '✨ Geminiに相談';
         if (navigator.clipboard && window.isSecureContext) {{
             navigator.clipboard.writeText(text).then(() => {{
-                btn.textContent = '✅ コピーしました！貼り付けてください';
-                window.open('https://gemini.google.com/app', '_blank');
+                btn.textContent = '✅ コピーしました！';
                 setTimeout(() => {{ btn.textContent = label; }}, 3000);
             }}).catch(() => {{ fallbackGemini(text, btn, label); }});
         }} else {{
@@ -435,8 +434,7 @@ components.html(
             ta.select();
             try {{
                 document.execCommand('copy');
-                btn.textContent = '✅ コピーしました！貼り付けてください';
-                window.open('https://gemini.google.com/app', '_blank');
+                btn.textContent = '✅ コピーしました！';
                 setTimeout(() => {{ btn.textContent = label; }}, 3000);
             }} catch (e) {{
                 btn.textContent = '❌ コピー失敗';
