@@ -131,14 +131,12 @@ templates = get_meal_templates(supabase, user.id)
 
 with st.expander("📋 テンプレートから登録"):
     if templates:
-        # テンプレートをボタンで一覧表示
-        for tpl in templates:
-            label = (
-                f"{tpl['name']}　{tpl['calories']:.0f}kcal　"
-                f"P:{tpl['p_val']:.1f} F:{tpl['f_val']:.1f} C:{tpl['c_val']:.1f}"
-            )
-            if st.button(label, key=f"tpl_btn_{tpl['id']}", use_container_width=True):
-                st.session_state["selected_template"] = tpl
+        # テンプレートをボタンで横並び表示
+        cols = st.columns(len(templates))
+        for col, tpl in zip(cols, templates):
+            with col:
+                if st.button(tpl["name"], key=f"tpl_btn_{tpl['id']}", use_container_width=True):
+                    st.session_state["selected_template"] = tpl
 
         # 選択済みテンプレートの食事タイプ選択 + 登録
         if "selected_template" in st.session_state:
