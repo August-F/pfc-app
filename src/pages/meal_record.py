@@ -167,7 +167,16 @@ if templates:
 food_text = st.text_area("食べたもの", height=60, key="food_text", label_visibility="collapsed")
 
 # ── 記録ボタン ──────────────────────────────────
-if st.button("記録する", use_container_width=True, key="record_meal"):
+st.markdown("""<style>
+    .st-key-record_btn_area button {
+        background-color: #06C755 !important;
+        color: white !important;
+        border-color: #06C755 !important;
+    }
+</style>""", unsafe_allow_html=True)
+with st.container(key="record_btn_area"):
+    submitted = st.button("記録する", use_container_width=True, key="record_meal")
+if submitted:
     has_template = "selected_template" in st.session_state
     has_text = bool(food_text and food_text.strip())
 
