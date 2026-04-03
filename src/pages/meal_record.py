@@ -133,10 +133,13 @@ with st.expander("📋 テンプレートから登録"):
     if templates:
         # テンプレートをボタンで横並び表示
         cols = st.columns(len(templates))
+        selected_id = st.session_state.get("selected_template", {}).get("id")
         for col, tpl in zip(cols, templates):
             with col:
-                if st.button(tpl["name"], key=f"tpl_btn_{tpl['id']}", use_container_width=True):
+                btn_type = "primary" if tpl["id"] == selected_id else "secondary"
+                if st.button(tpl["name"], key=f"tpl_btn_{tpl['id']}", use_container_width=True, type=btn_type):
                     st.session_state["selected_template"] = tpl
+                    st.rerun()
 
         # 選択済みテンプレートの食事タイプ選択 + 登録
         if "selected_template" in st.session_state:
