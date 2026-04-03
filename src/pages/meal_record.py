@@ -125,7 +125,7 @@ st.subheader("食事を記録")
 meal_type = st.radio("食事タイプ", ["朝食", "昼食", "夕食", "間食"], horizontal=True, key="meal_type")
 
 # ── 食べたもの ──────────────────────────────────
-st.markdown("**食べたもの**")
+st.markdown('<p style="font-size:14px; margin-bottom:0">食べたもの</p>', unsafe_allow_html=True)
 
 templates = get_meal_templates(supabase, user.id)
 
