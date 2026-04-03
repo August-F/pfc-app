@@ -32,7 +32,20 @@ st.markdown("""
     .streamlit-expanderHeader { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; }
     .st-key-food_text { margin-bottom: -1rem; }
     .st-key-meal_type [role="radiogroup"] { gap: 0.3rem !important; }
-    .st-key-meal_type [role="radiogroup"] label { padding: 0.2rem 0.4rem !important; font-size: 0.85rem !important; min-width: 0 !important; }
+    .st-key-meal_type [role="radiogroup"] label {
+        padding: 0.35rem 0.6rem !important;
+        font-size: 0.85rem !important;
+        min-width: 0 !important;
+        border: 1px solid rgba(49,51,63,0.2) !important;
+        border-radius: 0.5rem !important;
+        cursor: pointer !important;
+    }
+    .st-key-meal_type [role="radiogroup"] label:has(input:checked) {
+        border-color: #00ACC1 !important;
+        background: rgba(0, 172, 193, 0.2) !important;
+        font-weight: bold !important;
+    }
+    .st-key-meal_type [role="radiogroup"] label > div:first-child { display: none !important; }
 </style>
 """, unsafe_allow_html=True)
 
