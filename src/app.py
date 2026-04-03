@@ -95,7 +95,12 @@ st.markdown(f"""
         font-weight: bold;
     }}
     div[data-testid="stRadio"] > div > label > div:first-child {{
-        display: none;
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
     }}
 </style>
 """, unsafe_allow_html=True)

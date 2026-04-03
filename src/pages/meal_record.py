@@ -48,7 +48,14 @@ st.markdown("""
         background: rgba(0, 172, 193, 0.2) !important;
         font-weight: bold !important;
     }
-    .st-key-meal_type [role="radiogroup"] label > div:first-child { display: none !important; }
+    .st-key-meal_type [role="radiogroup"] label > div:first-child {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
