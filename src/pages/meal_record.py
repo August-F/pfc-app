@@ -30,7 +30,7 @@ st.markdown("""
     .block-container h3 { margin-top: 0.3rem !important; margin-bottom: 0.1rem !important; }
     .block-container hr { margin-top: 0.5rem !important; margin-bottom: 0.5rem !important; }
     .streamlit-expanderHeader { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; }
-    .st-key-food_text { margin-bottom: -0.5rem; }
+    .st-key-food_text { margin-bottom: -1rem; }
 </style>
 """, unsafe_allow_html=True)
 
