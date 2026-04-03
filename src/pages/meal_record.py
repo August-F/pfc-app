@@ -31,6 +31,8 @@ st.markdown("""
     .block-container hr { margin-top: 0.5rem !important; margin-bottom: 0.5rem !important; }
     .streamlit-expanderHeader { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; }
     .st-key-food_text { margin-bottom: -1rem; }
+    .st-key-meal_type [role="radiogroup"] { gap: 0.3rem !important; }
+    .st-key-meal_type [role="radiogroup"] label { padding: 0.2rem 0.4rem !important; font-size: 0.85rem !important; min-width: 0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
