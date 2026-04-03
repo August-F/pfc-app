@@ -39,6 +39,9 @@ st.markdown("""
         border: 1px solid rgba(49,51,63,0.2) !important;
         border-radius: 0.5rem !important;
         cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
     .st-key-meal_type [role="radiogroup"] label:has(input:checked) {
         border-color: #00ACC1 !important;
