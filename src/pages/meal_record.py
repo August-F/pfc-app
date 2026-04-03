@@ -148,6 +148,9 @@ def template_buttons(templates):
             min-width: 0 !important;
             width: auto !important;
         }
+        .st-key-template_grid button p {
+            font-size: 0.8rem !important;
+        }
     </style>""", unsafe_allow_html=True)
 
     COLS_PER_ROW = 3
