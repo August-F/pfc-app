@@ -131,36 +131,57 @@ templates = get_meal_templates(supabase, user.id)
 
 with st.expander("📋 テンプレートから登録"):
     if templates:
-        template_names = [t["name"] for t in templates]
-        selected_name = st.selectbox("テンプレートを選択", template_names, key="tpl_select")
-        tpl = next(t for t in templates if t["name"] == selected_name)
-
-        st.caption(
-            f"{tpl['food_name']}　"
-            f"{tpl['calories']:.0f}kcal　"
-            f"P:{tpl['p_val']:.1f}g　F:{tpl['f_val']:.1f}g　C:{tpl['c_val']:.1f}g"
-        )
-
-        tpl_meal_type = st.radio(
-            "食事タイプ",
-            ["朝食", "昼食", "夕食", "間食"],
-            index=["朝食", "昼食", "夕食", "間食"].index(tpl["meal_type"])
-                  if tpl.get("meal_type") in ["朝食", "昼食", "夕食", "間食"] else 0,
-            horizontal=True,
-            key="tpl_meal_type",
-        )
-
-        if st.button("✅ このテンプレートで登録", use_container_width=True, key="tpl_register"):
-            save_meal_log(
-                supabase, user.id,
-                st.session_state.current_date,
-                tpl_meal_type,
-                tpl["food_name"],
-                tpl["p_val"], tpl["f_val"], tpl["c_val"], tpl["calories"],
+        # テンプレートをボタンで一覧表示
+        for tpl in templates:
+            label = (
+                f"{tpl['name']}　{tpl['calories']:.0f}kcal　"
+                f"P:{tpl['p_val']:.1f} F:{tpl['f_val']:.1f} C:{tpl['c_val']:.1f}"
             )
-            # st.session_state["advice_needs_refresh"] = True  # アドバイス機能を一時無効化
-            st.toast(f"✅ {tpl['name']} を登録しました！")
-            st.rerun()
+            if st.button(label, key=f"tpl_btn_{tpl['id']}", use_container_width=True):
+                st.session_state["selected_template"] = tpl
+
+        # 選択済みテンプレートの食事タイプ選択 + 登録
+        if "selected_template" in st.session_state:
+            sel = st.session_state["selected_template"]
+            # テンプレートが削除されていないか確認
+            tpl_ids = [t["id"] for t in templates]
+            if sel["id"] not in tpl_ids:
+                del st.session_state["selected_template"]
+                st.rerun()
+            else:
+                st.divider()
+                st.info(f"選択中: **{sel['name']}**（{sel['food_name']}）")
+
+                meal_types = ["朝食", "昼食", "夕食", "間食"]
+                default_idx = (
+                    meal_types.index(sel["meal_type"])
+                    if sel.get("meal_type") in meal_types else 0
+                )
+                tpl_meal_type = st.radio(
+                    "食事タイプ",
+                    meal_types,
+                    index=default_idx,
+                    horizontal=True,
+                    key="tpl_meal_type",
+                )
+
+                col_register, col_cancel = st.columns(2)
+                with col_register:
+                    if st.button("✅ 登録する", use_container_width=True, key="tpl_register"):
+                        save_meal_log(
+                            supabase, user.id,
+                            st.session_state.current_date,
+                            tpl_meal_type,
+                            sel["food_name"],
+                            sel["p_val"], sel["f_val"], sel["c_val"], sel["calories"],
+                        )
+                        del st.session_state["selected_template"]
+                        st.toast(f"✅ {sel['name']} を登録しました！")
+                        st.rerun()
+                with col_cancel:
+                    if st.button("キャンセル", use_container_width=True, key="tpl_cancel"):
+                        del st.session_state["selected_template"]
+                        st.rerun()
     else:
         st.info("テンプレートがまだありません。設定ページから追加できます。")
 
