@@ -139,19 +139,32 @@ def template_buttons(templates):
             color: #111 !important;
             font-weight: bold !important;
         }
+        /* モバイルでもテンプレートボタンを横並びに維持 */
+        .st-key-template_grid [data-testid="stHorizontalBlock"] {
+            flex-wrap: nowrap !important;
+        }
+        .st-key-template_grid [data-testid="stColumn"] {
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            width: auto !important;
+        }
     </style>""", unsafe_allow_html=True)
 
-    cols = st.columns(len(templates))
+    COLS_PER_ROW = 3
     selected_id = st.session_state.get("selected_template", {}).get("id")
-    for col, tpl in zip(cols, templates):
-        with col:
-            btn_type = "primary" if tpl["id"] == selected_id else "secondary"
-            if st.button(tpl["name"], key=f"tpl_btn_{tpl['id']}", use_container_width=True, type=btn_type):
-                if tpl["id"] == selected_id:
-                    del st.session_state["selected_template"]
-                else:
-                    st.session_state["selected_template"] = tpl
-                st.rerun(scope="fragment")
+    with st.container(key="template_grid"):
+        for row_start in range(0, len(templates), COLS_PER_ROW):
+            row_templates = templates[row_start:row_start + COLS_PER_ROW]
+            cols = st.columns(COLS_PER_ROW)
+            for col, tpl in zip(cols, row_templates):
+                with col:
+                    btn_type = "primary" if tpl["id"] == selected_id else "secondary"
+                    if st.button(tpl["name"], key=f"tpl_btn_{tpl['id']}", use_container_width=True, type=btn_type):
+                        if tpl["id"] == selected_id:
+                            del st.session_state["selected_template"]
+                        else:
+                            st.session_state["selected_template"] = tpl
+                        st.rerun(scope="fragment")
 
 if templates:
     template_buttons(templates)
