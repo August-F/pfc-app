@@ -129,6 +129,15 @@ st.subheader("食事を記録")
 # ── テンプレートから登録 ──────────────────────────────────
 templates = get_meal_templates(supabase, user.id)
 
+st.markdown("""<style>
+    div[data-testid="stExpander"] button[kind="primary"] {
+        border-color: #00ACC1 !important;
+        background: rgba(0, 172, 193, 0.2) !important;
+        color: #111 !important;
+        font-weight: bold !important;
+    }
+</style>""", unsafe_allow_html=True)
+
 with st.expander("📋 テンプレートから登録"):
     if templates:
         # テンプレートをボタンで横並び表示
@@ -151,8 +160,6 @@ with st.expander("📋 テンプレートから登録"):
                 st.rerun()
             else:
                 st.divider()
-                st.info(f"選択中: **{sel['name']}**（{sel['food_name']}）")
-
                 meal_types = ["朝食", "昼食", "夕食", "間食"]
                 default_idx = (
                     meal_types.index(sel["meal_type"])
