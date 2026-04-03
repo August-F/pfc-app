@@ -135,7 +135,7 @@ st.html("""
         var path = window.location.pathname;
         // デフォルトページ "/" は meal_record と同等
         if (path === "/" || path === "") return 0;
-        var clean = path.replace(/\/$/, "");
+        var clean = path.replace(/\\/$/, "");
         for (var i = 0; i < pages.length; i++) {
             if (clean === pages[i]) return i;
         }
@@ -175,11 +175,11 @@ st.html("""
 
     // スワイプを無視すべき要素かチェック
     function shouldIgnore(el) {
+        if (el.closest && el.closest("input, textarea, select, button, a, canvas, "
+            + '[data-testid="stSlider"], [data-testid="stDataFrame"]')) return true;
         var tag = el.tagName;
         if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT"
             || tag === "BUTTON" || tag === "A" || tag === "CANVAS") return true;
-        if (el.closest && (el.closest('[data-testid="stSlider"]')
-            || el.closest('[data-testid="stDataFrame"]'))) return true;
         return false;
     }
 
@@ -212,7 +212,7 @@ st.html("""
     }, { passive: true });
 })();
 </script>
-""")
+""", unsafe_allow_javascript=True)
 
 # --- ページルーティング（Streamlit推奨方式 / グループ分け） ---
 pg = st.navigation({
