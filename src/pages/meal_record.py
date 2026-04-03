@@ -127,7 +127,9 @@ meal_type = st.radio("食事タイプ", ["朝食", "昼食", "夕食", "間食"]
 # ── テンプレート ──────────────────────────────────
 templates = get_meal_templates(supabase, user.id)
 
-if templates:
+@st.fragment
+def template_buttons(templates):
+    """テンプレートボタン（fragment で部分再実行し切り替えを高速化）"""
     st.markdown("""<style>
         button[kind="primary"] {
             border-color: #00ACC1 !important;
@@ -144,11 +146,13 @@ if templates:
             btn_type = "primary" if tpl["id"] == selected_id else "secondary"
             if st.button(tpl["name"], key=f"tpl_btn_{tpl['id']}", use_container_width=True, type=btn_type):
                 if tpl["id"] == selected_id:
-                    # 選択解除
                     del st.session_state["selected_template"]
                 else:
                     st.session_state["selected_template"] = tpl
-                st.rerun()
+                st.rerun(scope="fragment")
+
+if templates:
+    template_buttons(templates)
 
     # 選択済みテンプレートが削除されていないか確認
     if "selected_template" in st.session_state:
