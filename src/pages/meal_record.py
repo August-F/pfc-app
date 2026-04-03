@@ -173,23 +173,17 @@ with st.expander("📋 テンプレートから登録"):
                     key="tpl_meal_type",
                 )
 
-                col_register, col_cancel = st.columns(2)
-                with col_register:
-                    if st.button("✅ 登録する", use_container_width=True, key="tpl_register"):
-                        save_meal_log(
-                            supabase, user.id,
-                            st.session_state.current_date,
-                            tpl_meal_type,
-                            sel["food_name"],
-                            sel["p_val"], sel["f_val"], sel["c_val"], sel["calories"],
-                        )
-                        del st.session_state["selected_template"]
-                        st.toast(f"✅ {sel['name']} を登録しました！")
-                        st.rerun()
-                with col_cancel:
-                    if st.button("キャンセル", use_container_width=True, key="tpl_cancel"):
-                        del st.session_state["selected_template"]
-                        st.rerun()
+                if st.button("✅ 登録する", use_container_width=True, key="tpl_register"):
+                    save_meal_log(
+                        supabase, user.id,
+                        st.session_state.current_date,
+                        tpl_meal_type,
+                        sel["food_name"],
+                        sel["p_val"], sel["f_val"], sel["c_val"], sel["calories"],
+                    )
+                    del st.session_state["selected_template"]
+                    st.toast(f"✅ {sel['name']} を登録しました！")
+                    st.rerun()
     else:
         st.info("テンプレートがまだありません。設定ページから追加できます。")
 
