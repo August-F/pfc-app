@@ -60,7 +60,7 @@ selected_model = st.session_state.get("selected_model", "gemini-flash-latest")
 profile = get_user_profile(user.id)
 
 
-st.title("AI PFC Manager")
+st.title("食事記録")
 
 # --- 日付ナビゲーション ---
 params = st.query_params
@@ -107,7 +107,7 @@ for d in week_days:
 st.markdown(f"""
 <style>
     .week-header {{ text-align:center; margin:0.3rem 0 0.6rem 0; }}
-    .week-date-large {{ font-size:1.8rem; font-weight:700; margin-bottom:0.6rem; display:block; }}
+    .week-date-large {{ font-size:1.3rem; font-weight:700; margin-bottom:0.6rem; display:block; }}
     .week-strip {{ display:flex; justify-content:space-around; align-items:center; }}
     .day-cell {{
         display:flex; flex-direction:column; align-items:center;
@@ -135,7 +135,6 @@ current_date_str = st.session_state.current_date.isoformat()
 logs = get_meal_logs(supabase, user.id, current_date_str)
 
 # --- 食事入力 ---
-st.subheader("食事を記録")
 
 # ── 食事タイプ ──────────────────────────────────
 meal_type = st.radio("食事タイプ", ["朝食", "昼食", "夕食", "間食", "夜食"], horizontal=True, key="meal_type")
