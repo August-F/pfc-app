@@ -180,7 +180,7 @@ if templates:
             st.rerun()
 
 # ── テキスト入力 ──────────────────────────────────
-food_text = st.text_area("食べたもの", height=60, key="food_text", label_visibility="collapsed")
+food_text = st.text_area("食べたもの", height=60, key="food_text", label_visibility="collapsed", placeholder="ここに食事を入力")
 
 # ── 記録ボタン ──────────────────────────────────
 st.markdown("""<style>
