@@ -124,7 +124,9 @@ st.subheader("食事を記録")
 # ── 食事タイプ ──────────────────────────────────
 meal_type = st.radio("食事タイプ", ["朝食", "昼食", "夕食", "間食"], horizontal=True, key="meal_type")
 
-# ── テンプレート ──────────────────────────────────
+# ── 食べたもの ──────────────────────────────────
+st.markdown("**食べたもの**")
+
 templates = get_meal_templates(supabase, user.id)
 
 @st.fragment
@@ -162,7 +164,7 @@ if templates:
             st.rerun()
 
 # ── テキスト入力 ──────────────────────────────────
-food_text = st.text_area("食べたもの", height=60, key="food_text")
+food_text = st.text_area("食べたもの", height=60, key="food_text", label_visibility="collapsed")
 
 # ── 記録ボタン ──────────────────────────────────
 if st.button("記録する", use_container_width=True, key="record_meal"):
