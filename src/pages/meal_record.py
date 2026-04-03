@@ -30,11 +30,6 @@ st.markdown("""
     .block-container h3 { margin-top: 0.3rem !important; margin-bottom: 0.1rem !important; }
     .block-container hr { margin-top: 0.5rem !important; margin-bottom: 0.5rem !important; }
     .streamlit-expanderHeader { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; }
-    [data-testid="stFormSubmitButton"] > button {
-        background-color: white !important;
-        color: #31333F !important;
-        border-color: transparent !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -126,81 +121,76 @@ logs = get_meal_logs(supabase, user.id, current_date_str)
 # --- 食事入力 ---
 st.subheader("食事を記録")
 
-# ── テンプレートから登録 ──────────────────────────────────
+# ── 食事タイプ ──────────────────────────────────
+meal_type = st.radio("食事タイプ", ["朝食", "昼食", "夕食", "間食"], horizontal=True, key="meal_type")
+
+# ── テンプレート ──────────────────────────────────
 templates = get_meal_templates(supabase, user.id)
 
-st.markdown("""<style>
-    div[data-testid="stExpander"] button[kind="primary"] {
-        border-color: #00ACC1 !important;
-        background: rgba(0, 172, 193, 0.2) !important;
-        color: #111 !important;
-        font-weight: bold !important;
-    }
-</style>""", unsafe_allow_html=True)
+if templates:
+    st.markdown("""<style>
+        button[kind="primary"] {
+            border-color: #00ACC1 !important;
+            background: rgba(0, 172, 193, 0.2) !important;
+            color: #111 !important;
+            font-weight: bold !important;
+        }
+    </style>""", unsafe_allow_html=True)
 
-with st.expander("📋 テンプレートから登録"):
-    if templates:
-        # テンプレートをボタンで横並び表示
-        cols = st.columns(len(templates))
-        selected_id = st.session_state.get("selected_template", {}).get("id")
-        for col, tpl in zip(cols, templates):
-            with col:
-                btn_type = "primary" if tpl["id"] == selected_id else "secondary"
-                if st.button(tpl["name"], key=f"tpl_btn_{tpl['id']}", use_container_width=True, type=btn_type):
-                    st.session_state["selected_template"] = tpl
-                    st.rerun()
-
-        # 選択済みテンプレートの食事タイプ選択 + 登録
-        if "selected_template" in st.session_state:
-            sel = st.session_state["selected_template"]
-            # テンプレートが削除されていないか確認
-            tpl_ids = [t["id"] for t in templates]
-            if sel["id"] not in tpl_ids:
-                del st.session_state["selected_template"]
-                st.rerun()
-            else:
-                st.divider()
-                meal_types = ["朝食", "昼食", "夕食", "間食"]
-                default_idx = (
-                    meal_types.index(sel["meal_type"])
-                    if sel.get("meal_type") in meal_types else 0
-                )
-                tpl_meal_type = st.radio(
-                    "食事タイプ",
-                    meal_types,
-                    index=default_idx,
-                    horizontal=True,
-                    key="tpl_meal_type",
-                )
-
-                if st.button("✅ 登録する", use_container_width=True, key="tpl_register"):
-                    save_meal_log(
-                        supabase, user.id,
-                        st.session_state.current_date,
-                        tpl_meal_type,
-                        sel["food_name"],
-                        sel["p_val"], sel["f_val"], sel["c_val"], sel["calories"],
-                    )
+    cols = st.columns(len(templates))
+    selected_id = st.session_state.get("selected_template", {}).get("id")
+    for col, tpl in zip(cols, templates):
+        with col:
+            btn_type = "primary" if tpl["id"] == selected_id else "secondary"
+            if st.button(tpl["name"], key=f"tpl_btn_{tpl['id']}", use_container_width=True, type=btn_type):
+                if tpl["id"] == selected_id:
+                    # 選択解除
                     del st.session_state["selected_template"]
-                    st.toast(f"✅ {sel['name']} を登録しました！")
-                    st.rerun()
-    else:
-        st.info("テンプレートがまだありません。設定ページから追加できます。")
+                else:
+                    st.session_state["selected_template"] = tpl
+                st.rerun()
 
-with st.form("meal_input"):
-    meal_type = st.radio("タイミング", ["朝食", "昼食", "夕食", "間食"], horizontal=True)
-    food_text = st.text_area("食べたもの", height=60)
-    submitted = st.form_submit_button("AI解析して記録")
-
-    if submitted:
-        result = analyze_meal_with_gemini(food_text, selected_model)
-        if result:
-            p, f, c, cal, iron, folate, calcium, vit_d = result
-            save_meal_log(supabase, user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal,
-                          iron_mg=iron, folate_ug=folate, calcium_mg=calcium, vitamin_d_ug=vit_d)
-            # st.session_state["advice_needs_refresh"] = True  # アドバイス機能を一時無効化
-            st.toast(f"✅ 記録しました！ {cal}kcal")
+    # 選択済みテンプレートが削除されていないか確認
+    if "selected_template" in st.session_state:
+        tpl_ids = [t["id"] for t in templates]
+        if st.session_state["selected_template"]["id"] not in tpl_ids:
+            del st.session_state["selected_template"]
             st.rerun()
+
+# ── テキスト入力 ──────────────────────────────────
+food_text = st.text_area("食べたもの", height=60, key="food_text")
+
+# ── 記録ボタン ──────────────────────────────────
+if st.button("記録する", use_container_width=True, key="record_meal"):
+    has_template = "selected_template" in st.session_state
+    has_text = bool(food_text and food_text.strip())
+
+    if not has_template and not has_text:
+        st.warning("テンプレートを選択するか、食べたものを入力してください。")
+    else:
+        # テンプレート登録（AI解析なし）
+        if has_template:
+            sel = st.session_state["selected_template"]
+            save_meal_log(
+                supabase, user.id,
+                st.session_state.current_date,
+                meal_type,
+                sel["food_name"],
+                sel["p_val"], sel["f_val"], sel["c_val"], sel["calories"],
+            )
+            del st.session_state["selected_template"]
+            st.toast(f"✅ {sel['name']} を登録しました！")
+
+        # テキスト入力（AI解析）
+        if has_text:
+            result = analyze_meal_with_gemini(food_text, selected_model)
+            if result:
+                p, f, c, cal, iron, folate, calcium, vit_d = result
+                save_meal_log(supabase, user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal,
+                              iron_mg=iron, folate_ug=folate, calcium_mg=calcium, vitamin_d_ug=vit_d)
+                st.toast(f"✅ 記録しました！ {cal}kcal")
+
+        st.rerun()
 
 # --- グラフ + アドバイス ---
 total_p = total_f = total_c = total_cal = 0
