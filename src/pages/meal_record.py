@@ -225,6 +225,8 @@ if submitted:
     if not has_template and not has_text:
         st.warning("テンプレートを選択するか、食べたものを入力してください。")
     else:
+        saved = False
+
         # テンプレート登録（AI解析なし）
         if has_template:
             sel = st.session_state["selected_template"]
@@ -237,6 +239,7 @@ if submitted:
             )
             del st.session_state["selected_template"]
             st.toast(f"✅ {sel['name']} を登録しました！")
+            saved = True
 
         # テキスト入力（AI解析）
         if has_text:
@@ -246,8 +249,13 @@ if submitted:
                 save_meal_log(supabase, user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal,
                               iron_mg=iron, folate_ug=folate, calcium_mg=calcium, vitamin_d_ug=vit_d)
                 st.toast(f"✅ 記録しました！ {cal}kcal")
+                saved = True
+            else:
+                st.warning("AI解析に失敗したため記録されませんでした。もう一度お試しください。")
 
-        st.rerun()
+        # 保存が成功した場合のみ画面を再描画する（失敗時のエラー/警告表示を残すため）
+        if saved:
+            st.rerun()
 
 # --- グラフ + アドバイス ---
 total_p = total_f = total_c = total_cal = 0
