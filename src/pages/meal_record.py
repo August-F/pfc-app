@@ -222,9 +222,22 @@ if submitted:
     has_template = "selected_template" in st.session_state
     has_text = bool(food_text and food_text.strip())
 
-    if not has_template and not has_text:
+    # コールドスタート時の再接続でボタン押下イベントが多重送信され、
+    # Gemini APIが短時間に連続呼び出しされるのを防ぐための重複送信ガード
+    submit_key = (str(st.session_state.current_date), meal_type, food_text, has_template)
+    now = time.time()
+    is_duplicate = (
+        st.session_state.get("last_submit_key") == submit_key
+        and now - st.session_state.get("last_submit_time", 0) < 8
+    )
+
+    if is_duplicate:
+        pass
+    elif not has_template and not has_text:
         st.warning("テンプレートを選択するか、食べたものを入力してください。")
     else:
+        st.session_state["last_submit_key"] = submit_key
+        st.session_state["last_submit_time"] = now
         saved = False
 
         # テンプレート登録（AI解析なし）
