@@ -1,8 +1,7 @@
 import streamlit as st
-import google.generativeai as genai
 import json
 
-from config import get_supabase
+from config import get_supabase, get_gemini_client
 
 
 # --- Gemini関連 ---
@@ -11,12 +10,13 @@ from config import get_supabase
 def get_available_gemini_models():
     """Gemini APIから利用可能なテキスト生成モデル一覧を取得"""
     try:
+        client = get_gemini_client()
         models = []
-        for m in genai.list_models():
+        for m in client.models.list():
             model_name = m.name.replace("models/", "")
-            
+
             # テキスト生成をサポートしているか確認
-            if 'generateContent' not in m.supported_generation_methods:
+            if "generateContent" not in (m.supported_actions or []):
                 continue
             
             # テキスト出力モデルのみをフィルタリング
@@ -47,7 +47,7 @@ def analyze_meal_with_gemini(text, model_name="gemini-3-flash"):
     if len(text) < 2:
         return None
     try:
-        model = genai.GenerativeModel(model_name)
+        client = get_gemini_client()
         prompt = f"""
         あなたは栄養管理AIです。以下の食事内容から、カロリー、タンパク質(P)、脂質(F)、炭水化物(C)、
         鉄(iron_mg)、葉酸(folate_ug)、カルシウム(calcium_mg)、ビタミンD(vitamin_d_ug)を推測してください。
@@ -58,7 +58,7 @@ def analyze_meal_with_gemini(text, model_name="gemini-3-flash"):
         {{"cal": int, "p": int, "f": int, "c": int, "iron_mg": float, "folate_ug": float, "calcium_mg": float, "vitamin_d_ug": float}}
         例: {{"cal": 500, "p": 20, "f": 15, "c": 60, "iron_mg": 2.5, "folate_ug": 80.0, "calcium_mg": 150.0, "vitamin_d_ug": 3.0}}
         """
-        res = model.generate_content(prompt)
+        res = client.models.generate_content(model=model_name, contents=prompt)
         json_str = res.text.strip().replace("```json", "").replace("```", "")
         data = json.loads(json_str)
         return (
@@ -110,7 +110,7 @@ def analyze_meal_with_advice(text, model_name, profile, logged_meals, totals, ta
             return f"-{int(val)}"
 
     try:
-        model = genai.GenerativeModel(model_name)
+        client = get_gemini_client()
         prompt = f"""あなたは栄養管理AI兼マッチョなパーソナルトレーナーです。
 以下の2つのタスクを順番に実行し、結果をJSON形式で返してください。
 
@@ -162,7 +162,7 @@ def analyze_meal_with_advice(text, model_name, profile, logged_meals, totals, ta
 例:
 {{"cal": 500, "p": 20, "f": 15, "c": 60, "advice": "💪素晴らしいタンパク質量です！..."}}
 """
-        res = model.generate_content(prompt)
+        res = client.models.generate_content(model=model_name, contents=prompt)
         json_str = res.text.strip().replace("```json", "").replace("```", "")
         data = json.loads(json_str)
 
@@ -242,9 +242,9 @@ def generate_pfc_summary(totals, targets):
 #     fmt_c = fmt(rem_c)
 #
 #     try:
-#         model = genai.GenerativeModel(model_name)
+#         client = get_gemini_client()
 #         prompt = f"""...(省略)..."""
-#         res = model.generate_content(prompt)
+#         res = client.models.generate_content(model=model_name, contents=prompt)
 #         return res.text.strip()
 #     except Exception as e:
 #         error_msg = str(e)

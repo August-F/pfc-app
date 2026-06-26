@@ -2,6 +2,6 @@ streamlit
 supabase
 pandas
 numpy
-google-generativeai
+google-genai
 matplotlib
 plotly

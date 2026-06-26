@@ -104,9 +104,9 @@ class TestAnalyzeMealWithGemini:
         """正常なJSONレスポンスが正しくパースされること"""
         mock_response = MagicMock()
         mock_response.text = '{"cal": 500, "p": 30, "f": 15, "c": 60, "iron_mg": 2.5, "folate_ug": 80.0, "calcium_mg": 150.0, "vitamin_d_ug": 3.0}'
-        mock_model = MagicMock()
-        mock_model.generate_content.return_value = mock_response
-        mocker.patch("services.genai.GenerativeModel", return_value=mock_model)
+        mock_client = MagicMock()
+        mock_client.models.generate_content.return_value = mock_response
+        mocker.patch("services.get_gemini_client", return_value=mock_client)
 
         result = analyze_meal_with_gemini("鶏むね肉とご飯", "gemini-flash")
 
@@ -125,9 +125,9 @@ class TestAnalyzeMealWithGemini:
         """コードブロック(```json ... ```)付きのレスポンスも正しくパースされること"""
         mock_response = MagicMock()
         mock_response.text = '```json\n{"cal": 400, "p": 25, "f": 10, "c": 50, "iron_mg": 1.0, "folate_ug": 40.0, "calcium_mg": 100.0, "vitamin_d_ug": 1.0}\n```'
-        mock_model = MagicMock()
-        mock_model.generate_content.return_value = mock_response
-        mocker.patch("services.genai.GenerativeModel", return_value=mock_model)
+        mock_client = MagicMock()
+        mock_client.models.generate_content.return_value = mock_response
+        mocker.patch("services.get_gemini_client", return_value=mock_client)
 
         result = analyze_meal_with_gemini("サラダチキン", "gemini-flash")
 
@@ -139,9 +139,9 @@ class TestAnalyzeMealWithGemini:
         """不正なJSONが返ってきたとき None を返すこと"""
         mock_response = MagicMock()
         mock_response.text = "これはJSONではありません"
-        mock_model = MagicMock()
-        mock_model.generate_content.return_value = mock_response
-        mocker.patch("services.genai.GenerativeModel", return_value=mock_model)
+        mock_client = MagicMock()
+        mock_client.models.generate_content.return_value = mock_response
+        mocker.patch("services.get_gemini_client", return_value=mock_client)
         mocker.patch("streamlit.error")  # st.error の呼び出しを無効化
 
         result = analyze_meal_with_gemini("テスト食品", "gemini-flash")
@@ -152,9 +152,9 @@ class TestAnalyzeMealWithGemini:
         """JSONキーが一部欠けていても 0 として扱われること"""
         mock_response = MagicMock()
         mock_response.text = '{"cal": 300}'  # p, f, c, 微量栄養素 が欠落
-        mock_model = MagicMock()
-        mock_model.generate_content.return_value = mock_response
-        mocker.patch("services.genai.GenerativeModel", return_value=mock_model)
+        mock_client = MagicMock()
+        mock_client.models.generate_content.return_value = mock_response
+        mocker.patch("services.get_gemini_client", return_value=mock_client)
 
         result = analyze_meal_with_gemini("テスト食品", "gemini-flash")
 

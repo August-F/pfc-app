@@ -1,6 +1,6 @@
 import streamlit as st
 from supabase import create_client, Client
-import google.generativeai as genai
+from google import genai
 
 # --- Supabase接続 ---
 @st.cache_resource
@@ -26,7 +26,9 @@ def get_supabase() -> Client:
         st.stop()
 
 # --- Gemini接続 ---
-def init_gemini():
-    """Gemini APIを初期化"""
+@st.cache_resource
+def get_gemini_client():
+    """Gemini APIクライアントを初期化して返す"""
     if "gemini" in st.secrets:
-        genai.configure(api_key=st.secrets["gemini"]["api_key"])
+        return genai.Client(api_key=st.secrets["gemini"]["api_key"])
+    return None

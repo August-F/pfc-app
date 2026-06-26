@@ -3,7 +3,7 @@ import base64
 import pathlib as _pathlib
 from datetime import date
 
-from config import get_supabase, init_gemini
+from config import get_supabase, get_gemini_client
 
 # --- ページ設定（必ず最初に1回だけ） ---
 st.set_page_config(page_title="AI PFC Manager", layout="centered")
@@ -107,7 +107,7 @@ st.markdown(f"""
 
 # --- 共通初期化 ---
 supabase = get_supabase()
-init_gemini()
+get_gemini_client()
 
 if "current_date" not in st.session_state:
     st.session_state.current_date = date.today()
