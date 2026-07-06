@@ -119,3 +119,24 @@ st.toast(...); st.rerun()
 - `@st.cache_data` はデフォルトで引数をハッシュキーとして使用するため、**Supabase クライアントのような非シリアライザブルなオブジェクトは引数に渡さない**こと。代わりに関数内で `get_supabase()` を呼ぶ（`dashboard.py` の `fetch_meal_logs_range` パターンを参考）。
 - キャッシュを使う関数でデータを書き込んだ場合は、対応するキャッシュを `.clear()` で無効化すること。
 - `analyze_meal_with_advice()` は現在 `meal_record.py` から使われていないが、関数自体は `services.py` に残してある。将来的に不要であれば削除可。
+
+---
+
+## 2026-07-07 追記（コードレビュー対応）
+
+### キャッシュ設計の変更
+
+- **エラー結果をキャッシュさせない方針に統一**：キャッシュ対象関数内で例外を握りつぶしてデフォルト値（`{}` や `[]`）を返すと、その失敗結果がTTLの間キャッシュされ「目標値がデフォルトに戻る」「ダッシュボードが空になる」等の再現困難な症状になる。
+  - `get_user_profile()`：キャッシュ層を `_fetch_user_profile()`（例外は送出）に分離し、非キャッシュのラッパーで捕捉する構成に変更。キャッシュ無効化は `_fetch_user_profile.clear()`
+  - `fetch_meal_logs_range()`（dashboard.py）：3回リトライ後の最終失敗は例外を送出し、呼び出し側で `st.warning` を表示
+- **テンプレート一覧のキャッシュ化**：`get_meal_templates(user_id)` に `@st.cache_data(ttl=300)` を追加（`supabase` 引数を削除し関数内で `get_supabase()` を呼ぶ形に変更）。`save_meal_template()` / `delete_meal_template()` 実行時に `.clear()` で無効化。
+
+### キャッシュ設計方針（更新版）
+
+| キャッシュ対象 | TTL | 無効化タイミング |
+|--------------|-----|----------------|
+| Gemini モデル一覧 | 3600秒（1時間） | なし（TTL自然失効） |
+| ユーザープロフィール | 300秒（5分） | `update_user_profile()` 実行時に `_fetch_user_profile.clear()` |
+| テンプレート一覧 | 300秒（5分） | `save_meal_template()` / `delete_meal_template()` 実行時に `.clear()` |
+| ダッシュボード食事ログ | 60秒 | TTL自然失効（エラー結果はキャッシュされない） |
+| Supabase クライアント | 永続（`@st.cache_resource`） | アプリ再起動時 |

@@ -23,7 +23,7 @@ if _bg_b64:
         background: linear-gradient(
             rgba(0, 0, 0, 0.3),
             rgba(0, 0, 0, 0.4)
-        ), url("data:image/jpeg;base64,{_bg_b64}");
+        ), url("data:image/png;base64,{_bg_b64}");
         background-size: cover;
         background-position: center;
         background-attachment: fixed;

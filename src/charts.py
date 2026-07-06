@@ -126,22 +126,19 @@ def create_summary_chart(data_dict):
     shapes = []
 
     for i, (label, ratio, vtext) in enumerate(zip(labels, ratios, value_texts)):
-        bar_end = max(ratio, normal_vals[i])
-
         # --- 右側の数値テキスト ---
         if ratio > 100:
             display_text = f"{vtext}  <b>({int(ratio)}%)</b>"
-            text_color = TEXT_COLOR
         else:
             display_text = vtext
-            text_color = TEXT_COLOR
 
+        # バーの描画終端は常に ratio（超過時は 100 + 超過分 = ratio）
         annotations.append(dict(
-            x=bar_end + 2,
+            x=ratio + 2,
             y=y_pos[i],
             text=display_text,
             showarrow=False,
-            font=dict(size=11, color=text_color),
+            font=dict(size=11, color=TEXT_COLOR),
             xanchor="left",
             yanchor="middle",
         ))

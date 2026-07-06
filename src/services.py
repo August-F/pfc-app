@@ -1,5 +1,7 @@
 import streamlit as st
 import json
+import pandas as pd
+from datetime import timedelta
 
 from config import get_supabase, get_gemini_client
 
@@ -39,7 +41,17 @@ def get_available_gemini_models():
             return models
     except Exception as e:
         print(f"モデル一覧取得エラー: {e}")
-    return ["gemini-3-flash", "gemini-2.5-flash", "gemini-3-pro"]
+    # デフォルトモデル（app.py の selected_model 初期値）を必ず含める
+    return ["gemini-flash-latest", "gemini-3-flash", "gemini-2.5-flash", "gemini-3-pro"]
+
+
+def _sanitize_nutrition_value(value):
+    """Gemini応答の栄養素値を数値に正規化する（文字列・負値・不正値に対応）"""
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    return max(0.0, v)
 
 
 def analyze_meal_with_gemini(text, model_name="gemini-3-flash"):
@@ -61,10 +73,10 @@ def analyze_meal_with_gemini(text, model_name="gemini-3-flash"):
         res = client.models.generate_content(model=model_name, contents=prompt)
         json_str = res.text.strip().replace("```json", "").replace("```", "")
         data = json.loads(json_str)
-        return (
-            data.get("p", 0), data.get("f", 0), data.get("c", 0), data.get("cal", 0),
-            data.get("iron_mg", 0), data.get("folate_ug", 0),
-            data.get("calcium_mg", 0), data.get("vitamin_d_ug", 0),
+        # 型・値域を検証して正規化（文字列や負値がDBに入るのを防ぐ）
+        return tuple(
+            _sanitize_nutrition_value(data.get(k, 0))
+            for k in ("p", "f", "c", "cal", "iron_mg", "folate_ug", "calcium_mg", "vitamin_d_ug")
         )
     except Exception as e:
         # 画面上にデバッグ用のエラー内容を表示
@@ -101,13 +113,6 @@ def analyze_meal_with_advice(text, model_name, profile, logged_meals, totals, ta
         )
     else:
         meals_detail = "まだ記録なし"
-
-    # +/-表記の準備
-    def fmt(val):
-        if val <= 0:
-            return f"+{abs(int(val))}"
-        else:
-            return f"-{int(val)}"
 
     try:
         client = get_gemini_client()
@@ -255,22 +260,31 @@ def generate_pfc_summary(totals, targets):
 # --- DB操作: profiles ---
 
 @st.cache_data(ttl=300)
+def _fetch_user_profile(user_id):
+    """ユーザー設定をDBから取得（エラー時は例外を送出し、失敗結果をキャッシュさせない）"""
+    supabase = get_supabase()
+    data = supabase.table("profiles").select("*").eq("id", user_id).execute()
+    if data.data:
+        return data.data[0]
+    return {}
+
+
 def get_user_profile(user_id):
-    """ユーザー設定を取得"""
+    """ユーザー設定を取得（取得失敗時は空dictを返す。失敗結果はキャッシュされない）"""
     try:
-        supabase = get_supabase()
-        data = supabase.table("profiles").select("*").eq("id", user_id).execute()
-        if data.data:
-            return data.data[0]
-        return {}
-    except:
+        return _fetch_user_profile(user_id)
+    except Exception as e:
+        # st.stop() 等のStreamlit制御用例外は握りつぶさず再送出する
+        if e.__class__.__module__.startswith("streamlit"):
+            raise
+        print(f"[get_user_profile] 取得エラー: {e}")
         return {}
 
 
 def update_user_profile(supabase, user_id, updates):
     """ユーザー設定を更新"""
     supabase.table("profiles").update(updates).eq("id", user_id).execute()
-    get_user_profile.clear()
+    _fetch_user_profile.clear()
 
 
 # --- DB操作: meal_logs ---
@@ -312,8 +326,10 @@ def delete_meal_log(supabase, log_id):
 
 # ── テンプレート操作 ──────────────────────────────────────
 
-def get_meal_templates(supabase, user_id: str):
-    """ユーザーのテンプレート一覧を取得"""
+@st.cache_data(ttl=300)
+def get_meal_templates(user_id: str):
+    """ユーザーのテンプレート一覧を取得（5分キャッシュ。追加・削除時に .clear() で無効化）"""
+    supabase = get_supabase()
     res = supabase.table("meal_templates") \
         .select("*") \
         .eq("user_id", user_id) \
@@ -335,8 +351,43 @@ def save_meal_template(supabase, user_id: str, name: str, food_name: str,
         "calories":  cal,
         "meal_type": meal_type,
     }).execute()
+    get_meal_templates.clear()
 
 
 def delete_meal_template(supabase, template_id: str):
     """テンプレートを削除"""
     supabase.table("meal_templates").delete().eq("id", template_id).execute()
+    get_meal_templates.clear()
+
+
+# ── 集計ロジック ──────────────────────────────────────
+
+def aggregate_daily(logs, start_date, days):
+    """meal_logs を日次集計して DataFrame にする（dashboard 用の純粋関数）"""
+    rows = []
+    weekdays = ["月", "火", "水", "木", "金", "土", "日"]
+    for i in range(days):
+        d = start_date + timedelta(days=i)
+        key = d.isoformat()
+        wd = weekdays[d.weekday()]
+        rows.append({
+            "date": key,
+            "label": f"{d.month}/{d.day}({wd})",
+            "calorie": 0, "protein": 0, "fat": 0, "carb": 0,
+            "p_cal": 0, "f_cal": 0, "c_cal": 0,
+            "meal_count": 0,
+        })
+    date_map = {r["date"]: r for r in rows}
+    for log in logs:
+        r = date_map.get(log["meal_date"])
+        if not r:
+            continue
+        r["calorie"] += log.get("calories", 0) or 0
+        r["protein"] += log.get("p_val", 0) or 0
+        r["fat"] += log.get("f_val", 0) or 0
+        r["carb"] += log.get("c_val", 0) or 0
+        r["p_cal"] += (log.get("p_val", 0) or 0) * 4
+        r["f_cal"] += (log.get("f_val", 0) or 0) * 9
+        r["c_cal"] += (log.get("c_val", 0) or 0) * 4
+        r["meal_count"] += 1
+    return pd.DataFrame(rows)

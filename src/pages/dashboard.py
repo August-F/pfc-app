@@ -3,12 +3,12 @@
 """
 
 import streamlit as st
-import pandas as pd
+import time
 import plotly.graph_objects as go
 from datetime import date, timedelta
 
 from config import get_supabase
-from services import get_user_profile
+from services import get_user_profile, aggregate_daily
 
 supabase = get_supabase()
 
@@ -23,9 +23,9 @@ DEFAULT_USER_ID = "d8875444-a88a-4a31-947d-2174eefb80f0"
 # --- データ取得 ---
 @st.cache_data(ttl=60, show_spinner=False)
 def fetch_meal_logs_range(user_id: str, start_date: str, end_date: str):
-    """指定期間の meal_logs を取得（リトライ付き）"""
-    import time as _time
+    """指定期間の meal_logs を取得（リトライ付き。最終失敗時は例外を送出し、失敗結果をキャッシュさせない）"""
     _supabase = get_supabase()
+    last_error = None
     for attempt in range(3):
         try:
             res = (
@@ -39,41 +39,10 @@ def fetch_meal_logs_range(user_id: str, start_date: str, end_date: str):
             )
             return res.data if res and res.data else []
         except Exception as e:
+            last_error = e
             if attempt < 2:
-                _time.sleep(1)
-            else:
-                print(f"[fetch_meal_logs_range] データ取得エラー: {e}")
-                return []
-
-
-def aggregate_daily(logs, start_date, days):
-    rows = []
-    weekdays = ["月", "火", "水", "木", "金", "土", "日"]
-    for i in range(days):
-        d = start_date + timedelta(days=i)
-        key = d.isoformat()
-        wd = weekdays[d.weekday()]
-        rows.append({
-            "date": key,
-            "label": f"{d.month}/{d.day}({wd})",
-            "calorie": 0, "protein": 0, "fat": 0, "carb": 0,
-            "p_cal": 0, "f_cal": 0, "c_cal": 0,
-            "meal_count": 0,
-        })
-    date_map = {r["date"]: r for r in rows}
-    for log in logs:
-        r = date_map.get(log["meal_date"])
-        if not r:
-            continue
-        r["calorie"] += log.get("calories", 0) or 0
-        r["protein"] += log.get("p_val", 0) or 0
-        r["fat"] += log.get("f_val", 0) or 0
-        r["carb"] += log.get("c_val", 0) or 0
-        r["p_cal"] += (log.get("p_val", 0) or 0) * 4
-        r["f_cal"] += (log.get("f_val", 0) or 0) * 9
-        r["c_cal"] += (log.get("c_val", 0) or 0) * 4
-        r["meal_count"] += 1
-    return pd.DataFrame(rows)
+                time.sleep(1)
+    raise last_error
 
 
 # --- 共通軸スタイル ---
@@ -217,7 +186,12 @@ days = st.radio("表示期間", [7, 14, 30], index=0, horizontal=True,
 # --- データ取得 ---
 today = date.today()
 start = today - timedelta(days=days - 1)
-logs = fetch_meal_logs_range(user_id, start.isoformat(), today.isoformat())
+try:
+    logs = fetch_meal_logs_range(user_id, start.isoformat(), today.isoformat())
+except Exception as e:
+    print(f"[fetch_meal_logs_range] データ取得エラー: {e}")
+    st.warning("⚠️ データの取得に失敗しました。ページを再読み込みしてください。")
+    logs = []
 df = aggregate_daily(logs, start, days)
 
 days_with_data = int((df["meal_count"] > 0).sum())

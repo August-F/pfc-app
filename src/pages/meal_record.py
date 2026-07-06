@@ -147,12 +147,15 @@ logs = get_meal_logs(supabase, user.id, current_date_str)
 # --- 食事入力 ---
 
 # ── 食事タイプ ──────────────────────────────────
+# テンプレート選択時のデフォルト食事タイプを反映（ラジオ生成前に設定する必要がある）
+if "pending_meal_type" in st.session_state:
+    st.session_state["meal_type"] = st.session_state.pop("pending_meal_type")
 meal_type = st.radio("食事タイプ", ["朝食", "昼食", "夕食", "間食", "夜食"], horizontal=True, key="meal_type")
 
 # ── 食べたもの ──────────────────────────────────
 st.markdown('<p style="font-size:14px; margin-bottom:0">食べたもの</p>', unsafe_allow_html=True)
 
-templates = get_meal_templates(supabase, user.id)
+templates = get_meal_templates(user.id)
 
 @st.fragment
 def template_buttons(templates):
@@ -190,9 +193,15 @@ def template_buttons(templates):
                     if st.button(tpl["name"], key=f"tpl_btn_{tpl['id']}", use_container_width=True, type=btn_type):
                         if tpl["id"] == selected_id:
                             del st.session_state["selected_template"]
+                            st.rerun(scope="fragment")
                         else:
                             st.session_state["selected_template"] = tpl
-                        st.rerun(scope="fragment")
+                            if tpl.get("meal_type"):
+                                # デフォルト食事タイプをラジオに反映（ラジオはfragment外のため全体を再実行）
+                                st.session_state["pending_meal_type"] = tpl["meal_type"]
+                                st.rerun()
+                            else:
+                                st.rerun(scope="fragment")
 
 if templates:
     template_buttons(templates)
@@ -232,7 +241,7 @@ if submitted:
     )
 
     if is_duplicate:
-        pass
+        st.toast("⏳ 同じ内容を処理済みです。少し待ってから再度お試しください。")
     elif not has_template and not has_text:
         st.warning("テンプレートを選択するか、食べたものを入力してください。")
     else:
@@ -243,26 +252,34 @@ if submitted:
         # テンプレート登録（AI解析なし）
         if has_template:
             sel = st.session_state["selected_template"]
-            save_meal_log(
-                supabase, user.id,
-                st.session_state.current_date,
-                meal_type,
-                sel["food_name"],
-                sel["p_val"], sel["f_val"], sel["c_val"], sel["calories"],
-            )
-            del st.session_state["selected_template"]
-            st.toast(f"✅ {sel['name']} を登録しました！")
-            saved = True
+            try:
+                save_meal_log(
+                    supabase, user.id,
+                    st.session_state.current_date,
+                    meal_type,
+                    sel["food_name"],
+                    sel["p_val"], sel["f_val"], sel["c_val"], sel["calories"],
+                )
+            except Exception as e:
+                st.error(f"保存に失敗しました: {type(e).__name__} - {e}")
+            else:
+                del st.session_state["selected_template"]
+                st.toast(f"✅ {sel['name']} を登録しました！")
+                saved = True
 
         # テキスト入力（AI解析）
         if has_text:
             result = analyze_meal_with_gemini(food_text, selected_model)
             if result:
                 p, f, c, cal, iron, folate, calcium, vit_d = result
-                save_meal_log(supabase, user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal,
-                              iron_mg=iron, folate_ug=folate, calcium_mg=calcium, vitamin_d_ug=vit_d)
-                st.toast(f"✅ 記録しました！ {cal}kcal")
-                saved = True
+                try:
+                    save_meal_log(supabase, user.id, st.session_state.current_date, meal_type, food_text, p, f, c, cal,
+                                  iron_mg=iron, folate_ug=folate, calcium_mg=calcium, vitamin_d_ug=vit_d)
+                except Exception as e:
+                    st.error(f"保存に失敗しました: {type(e).__name__} - {e}")
+                else:
+                    st.toast(f"✅ 記録しました！ {int(cal)}kcal")
+                    saved = True
             else:
                 st.warning("AI解析に失敗したため記録されませんでした。もう一度お試しください。")
 
@@ -406,8 +423,12 @@ if logs and logs.data:
             st.write(f"**{log['food_name']}**")
             st.write(f"🔥 {log['calories']}kcal | P:{log['p_val']} F:{log['f_val']} C:{log['c_val']}")
             if st.button("削除", key=f"del_{log['id']}"):
-                delete_meal_log(supabase, log['id'])
-                st.rerun()
+                try:
+                    delete_meal_log(supabase, log['id'])
+                except Exception as e:
+                    st.error(f"削除に失敗しました: {type(e).__name__} - {e}")
+                else:
+                    st.rerun()
 else:
     st.info("まだ記録がありません")
 

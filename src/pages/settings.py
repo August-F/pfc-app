@@ -144,10 +144,14 @@ with st.form("profile_form"):
             "target_p": t_p, "target_f": t_f, "target_c": t_c,
             "likes": likes, "dislikes": dislikes, "preferences": prefs,
         }
-        update_user_profile(supabase, user_id, updates)
-        st.success("✅ 設定を保存しました！")
-        time.sleep(1)
-        st.rerun()
+        try:
+            update_user_profile(supabase, user_id, updates)
+        except Exception as e:
+            st.error(f"保存に失敗しました: {type(e).__name__} - {e}")
+        else:
+            st.success("✅ 設定を保存しました！")
+            time.sleep(1)
+            st.rerun()
 
 st.divider()
 
@@ -175,21 +179,25 @@ with st.form("tpl_add_form"):
     )
     if st.form_submit_button("➕ テンプレートを追加", use_container_width=True):
         if tpl_new_name:
-            save_meal_template(
-                supabase, user_id,
-                tpl_new_name,
-                tpl_new_food or tpl_new_name,
-                tpl_new_p, tpl_new_f, tpl_new_c, tpl_new_cal,
-                tpl_new_type if tpl_new_type != "なし" else None,
-            )
-            st.success(f"⭐ 「{tpl_new_name}」を追加しました！")
-            time.sleep(1)
-            st.rerun()
+            try:
+                save_meal_template(
+                    supabase, user_id,
+                    tpl_new_name,
+                    tpl_new_food or tpl_new_name,
+                    tpl_new_p, tpl_new_f, tpl_new_c, tpl_new_cal,
+                    tpl_new_type if tpl_new_type != "なし" else None,
+                )
+            except Exception as e:
+                st.error(f"保存に失敗しました: {type(e).__name__} - {e}")
+            else:
+                st.success(f"⭐ 「{tpl_new_name}」を追加しました！")
+                time.sleep(1)
+                st.rerun()
         else:
             st.warning("テンプレート名を入力してください")
 
 # --- 登録済みテンプレート一覧 ---
-templates = get_meal_templates(supabase, user_id)
+templates = get_meal_templates(user_id)
 if templates:
     st.markdown("**登録済みテンプレート**")
     for tpl in templates:
@@ -202,5 +210,9 @@ if templates:
             )
         with col_del:
             if st.button("🗑️", key=f"del_tpl_{tpl['id']}"):
-                delete_meal_template(supabase, tpl["id"])
-                st.rerun()
+                try:
+                    delete_meal_template(supabase, tpl["id"])
+                except Exception as e:
+                    st.error(f"削除に失敗しました: {type(e).__name__} - {e}")
+                else:
+                    st.rerun()
