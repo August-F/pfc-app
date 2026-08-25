@@ -126,7 +126,7 @@ if "user" not in st.session_state:
 
 # AIモデルのデフォルト値
 if "selected_model" not in st.session_state:
-    st.session_state["selected_model"] = "gemini-flash-latest"
+    st.session_state["selected_model"] = "gemini-flash-lite-latest"
 
 # --- ページルーティング（Streamlit推奨方式 / グループ分け） ---
 pg = st.navigation({
